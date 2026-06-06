@@ -1,0 +1,660 @@
+/* ============================================================
+   game.css — layout for map hub, panels, battle, modals
+   ============================================================ */
+
+.app { display:grid; grid-template-rows:auto 1fr; height:100vh; }
+
+/* ---------- top bar ---------- */
+.topbar {
+  display:flex; align-items:center; gap:18px; padding:10px 20px;
+  background:linear-gradient(180deg, rgba(28,23,17,.98), rgba(20,16,11,.96));
+  border-bottom:1px solid var(--line); box-shadow:0 4px 18px -8px #000; z-index:30;
+}
+.brand { display:flex; align-items:center; gap:12px; }
+.crest { width:42px; height:42px; border-radius:9px; display:grid; place-items:center;
+  font-family:var(--font-zh); font-weight:700; font-size:1.3rem; color:#fff;
+  border:1.5px solid var(--gold-bright); box-shadow:inset 0 0 0 1px rgba(0,0,0,.3); }
+.brand .fz { font-family:var(--font-disp); color:var(--gold-bright); font-size:1.05rem; letter-spacing:.04em; line-height:1; }
+.brand .fl { font-size:.78rem; color:var(--paper-dim); }
+
+.tb-stats { display:flex; gap:8px; }
+.tb-stat { background:rgba(255,255,255,.03); border:1px solid var(--line-soft); border-radius:9px; padding:5px 13px; text-align:center; min-width:62px; }
+.tb-stat .l { font-size:.64rem; color:var(--paper-dim); letter-spacing:.02em; }
+.tb-stat .v { font-size:1.02rem; font-weight:700; color:var(--gold-bright); font-variant-numeric:tabular-nums; }
+
+.tb-tools { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; }
+.tb-tools .btn { padding:8px 12px; font-size:.82rem; }
+#btnReform.pulse { border-color:var(--gold-bright); animation:pulseG 1.3s infinite; }
+@keyframes pulseG { 0%,100%{ box-shadow:0 0 0 0 rgba(232,200,120,.5);} 50%{ box-shadow:0 0 0 7px rgba(232,200,120,0);} }
+.reform-pip { font-size:.62rem; color:var(--paper-dim); margin-left:4px; }
+
+/* ---------- layout body ---------- */
+.body { display:grid; grid-template-columns:1fr 372px; overflow:hidden; }
+.map-area { overflow:auto; padding:20px; display:block; }
+
+/* map board */
+.board { position:relative; width:100%; padding:14px; border-radius:16px;
+  background:linear-gradient(180deg, rgba(36,29,21,.9), rgba(24,19,14,.92));
+  border:1px solid var(--line); box-shadow:var(--shadow-lg); }
+
+/* geographic map stage */
+.map-viewport { position:relative; width:min(82vh, 100%); aspect-ratio:100/103; margin:0 auto;
+  border-radius:10px; overflow:hidden; border:1px solid var(--line); background:#8ba6b3;
+  box-shadow:inset 0 0 60px rgba(20,14,8,.35); touch-action:none; }
+.map-stage { position:absolute; inset:0; transform-origin:0 0; cursor:grab; background:#8ba6b3; }
+.map-stage.grabbing { cursor:grabbing; }
+.vec-map { position:absolute; inset:0; width:100%; height:100%; display:block; }
+.vec-map .waves .wave { fill:none; stroke:rgba(255,255,255,.16); stroke-width:.22; }
+.vec-map .land-shadow { fill:#5c4a32; transform:translate(0.5px,0.8px); opacity:.45; }
+.vec-map .landmass { fill:#ecdcb8; stroke:none; }
+.vec-map .land-outline { fill:none; stroke:#4a3320; stroke-width:.42; stroke-linejoin:round; opacity:.85; }
+.vec-map .regions .cell { stroke:rgba(74,51,32,.32); stroke-width:.16; cursor:pointer; transition:fill-opacity .2s; }
+.vec-map .regions .cell:hover { fill-opacity:.85 !important; }
+.vec-map .regions .cell.active-cell { stroke:var(--gold-bright); stroke-width:.5; }
+.vec-map .rivers .river { fill:none; stroke:#6f9ec0; stroke-width:.7; stroke-linecap:round; stroke-linejoin:round; opacity:.8; }
+.vec-map .islands .island { fill:#e3d2ac; stroke:#4a3320; stroke-width:.3; }
+.map-zoom-ctrl { position:absolute; right:24px; bottom:24px; display:flex; flex-direction:column; gap:6px; z-index:20; }
+.map-zoom-ctrl button { width:36px; height:36px; border-radius:9px; border:1px solid var(--line);
+  background:rgba(20,14,8,.82); color:var(--gold-bright); font-size:1.2rem; font-weight:700; cursor:pointer;
+  display:grid; place-items:center; box-shadow:var(--shadow-md); }
+.map-zoom-ctrl button:hover { border-color:var(--gold); background:rgba(40,28,16,.92); }
+.map-zoom-hint { position:absolute; left:24px; bottom:24px; z-index:20; font-size:.66rem; color:var(--paper-dim);
+  background:rgba(20,14,8,.7); border:1px solid var(--line-soft); border-radius:8px; padding:4px 9px; pointer-events:none; }
+.terr-layer { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+
+/* ---------- 州 region name overlay + map language toggle ---------- */
+.region-layer { position:absolute; inset:0; pointer-events:none; z-index:1; }
+.region-label { position:absolute; transform:translate(-50%,-50%); white-space:nowrap;
+  font-family:var(--font-zh); font-weight:700; color:rgba(74,51,32,.5);
+  text-shadow:0 0 4px rgba(243,233,210,.85), 0 0 7px rgba(243,233,210,.7); letter-spacing:.04em; }
+.region-label .rl-ch { font-size:1.5rem; letter-spacing:.1em; }
+.region-label .rl-th { font-size:1.05rem; }
+.region-label .rl-en { font-size:.92rem; font-style:italic; letter-spacing:.02em; }
+
+/* per-language visibility (driven by .lang-* on .map-stage) */
+.rl-ch,.rl-th,.rl-en,.lb-ch,.lb-th,.lb-en { display:none; }
+.lang-ch .rl-ch, .lang-th .rl-th, .lang-en .rl-en { display:inline; }
+.lang-ch .lb-ch, .lang-th .lb-th, .lang-en .lb-en { display:inline; }
+
+.lang-toggle { position:absolute; left:24px; top:24px; z-index:20; display:flex; gap:0;
+  border:1px solid var(--line); border-radius:9px; overflow:hidden; box-shadow:var(--shadow-md); }
+.lang-toggle button { width:34px; height:32px; border:0; border-right:1px solid var(--line-soft);
+  background:rgba(20,14,8,.82); color:var(--paper-dim); font-size:.72rem; font-weight:800; letter-spacing:.04em;
+  cursor:pointer; font-family:var(--font-zh); }
+.lang-toggle button:last-child { border-right:0; }
+.lang-toggle button:hover { background:rgba(40,28,16,.92); color:var(--gold-bright); }
+.lang-toggle button.on { background:var(--gold); color:#1a120a; }
+
+/* layer visibility toggle (มณฑล / เมือง / กำลังพล) */
+.layer-toggle { position:absolute; left:24px; top:64px; z-index:20; display:flex; gap:0;
+  border:1px solid var(--line); border-radius:9px; overflow:hidden; box-shadow:var(--shadow-md); }
+.layer-toggle button { height:30px; padding:0 9px; border:0; border-right:1px solid var(--line-soft);
+  background:rgba(20,14,8,.82); color:var(--paper-dim); font-size:.7rem; font-weight:700;
+  cursor:pointer; font-family:inherit; white-space:nowrap; opacity:.55; }
+.layer-toggle button:last-child { border-right:0; }
+.layer-toggle button:hover { background:rgba(40,28,16,.92); color:var(--gold-bright); }
+.layer-toggle button.on { background:rgba(201,162,74,.22); color:var(--gold-bright); opacity:1; }
+/* hide-* classes driven by JS on .map-stage */
+.map-stage.hide-regions .region-label { display:none !important; }
+.map-stage.hide-troops .m-troop { display:none !important; }
+.map-stage.hide-cities .m-label { display:none !important; }
+.map-stage.hide-cities .marker:hover .m-label,
+.map-stage.hide-cities .marker.active .m-label { display:block !important; }
+.marker-layer { position:absolute; inset:0; }
+
+.marker { position:absolute; transform:translate(-50%,-50%); background:none; border:none; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; padding:0; z-index:2; }
+.marker:hover { z-index:8; }
+.m-dot { width:11px; height:11px; border-radius:50%; background:var(--mc); border:1.5px solid rgba(40,28,16,.8);
+  box-shadow:0 1px 4px rgba(0,0,0,.6); transition:transform .12s; }
+.marker.mine .m-dot { border-color:#fff; }
+.m-large .m-dot { width:17px; height:17px; }
+.m-medium .m-dot { width:13.5px; height:13.5px; }
+.marker:hover .m-dot { transform:scale(1.25); }
+.marker.active .m-dot { box-shadow:0 0 0 3px var(--gold-bright), 0 0 12px var(--gold); }
+
+.m-troop { position:absolute; top:-9px; right:-13px; font-size:.56rem; font-weight:800; color:#fff;
+  background:rgba(20,14,8,.82); border:1px solid rgba(201,162,74,.5); border-radius:8px; padding:0 4px;
+  font-variant-numeric:tabular-nums; line-height:1.4; pointer-events:none; }
+/* fog of war — unknown enemy/neutral garrisons */
+.m-troop.unknown { color:#cdbfa0; background:rgba(28,22,14,.72); border-color:rgba(120,104,74,.55);
+  border-style:dashed; font-weight:700; }
+.cell.fogged { filter:saturate(.45) brightness(.92); }
+.tnum-fog { color:#8a7c5f !important; letter-spacing:.12em; }
+.pv-fog { margin-top:9px; font-size:.78rem; line-height:1.5; color:#cdbfa0;
+  background:rgba(28,22,14,.5); border:1px dashed rgba(120,104,74,.5); border-radius:8px; padding:8px 11px; }
+.pv-fog b { color:var(--gold-bright); }
+
+/* ===== Imperial Court ===== */
+.court-banner { display:flex; gap:13px; align-items:center; background:rgba(40,20,14,.45);
+  border:1px solid rgba(201,162,74,.4); border-radius:12px; padding:13px 15px; margin-bottom:14px; }
+.court-seal { width:50px; height:50px; flex:none; display:grid; place-items:center; font-size:1.7rem;
+  color:#f4e3b5; background:radial-gradient(circle at 35% 30%, #7a2018, #4a1109); border-radius:9px;
+  border:2px solid rgba(201,162,74,.65); box-shadow:0 2px 10px rgba(0,0,0,.4); }
+.court-emp { font-size:.95rem; color:var(--paper); font-weight:600; }
+.court-locked { background:rgba(28,22,14,.5); border:1px dashed rgba(120,104,74,.55); border-radius:10px;
+  padding:13px 15px; font-size:.88rem; line-height:1.6; color:var(--paper-dim); margin-bottom:14px; }
+.court-locked b { color:var(--gold-bright); }
+.court-dyn-done { background:rgba(40,20,14,.5); border:1px solid var(--gold); border-radius:10px;
+  padding:16px; text-align:center; font-size:1rem; line-height:1.7; color:var(--paper); }
+.court-sec { background:rgba(20,14,8,.32); border:1px solid rgba(201,162,74,.22); border-radius:10px;
+  padding:12px 14px; margin-bottom:12px; }
+.court-h { font-size:.92rem; font-weight:700; color:var(--gold-bright); margin-bottom:10px; }
+.court-h .muted { font-weight:400; }
+.court-edict-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
+.court-edict-row:last-child { margin-bottom:0; }
+.court-lbl { font-size:.82rem; color:var(--paper-dim); }
+.court-select, .court-input { background:rgba(12,9,6,.7); color:var(--paper); border:1px solid rgba(201,162,74,.35);
+  border-radius:7px; padding:6px 9px; font-size:.82rem; font-family:inherit; }
+.court-input { flex:1; min-width:140px; }
+.court-titles { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.court-tag { font-size:.74rem; background:rgba(201,162,74,.16); border:1px solid rgba(201,162,74,.4);
+  color:var(--gold-bright); border-radius:20px; padding:2px 10px; }
+.court-dynsec { border-color:rgba(201,162,74,.5); background:rgba(40,20,14,.3); }
+
+/* ===== Treasures ===== */
+.trz-grid { display:flex; flex-direction:column; gap:11px; }
+.trz-card { display:flex; gap:13px; background:rgba(20,14,8,.4); border:1px solid rgba(201,162,74,.25);
+  border-radius:11px; padding:13px; }
+.trz-card.mine { border-color:var(--gold); background:rgba(40,24,12,.5); box-shadow:0 0 0 1px rgba(201,162,74,.3) inset; }
+.trz-card.hidden { opacity:.62; }
+.trz-icon { width:46px; height:46px; flex:none; display:grid; place-items:center; font-size:1.7rem;
+  background:rgba(12,9,6,.6); border-radius:10px; border:1px solid rgba(201,162,74,.3); }
+.trz-name { font-size:.95rem; font-weight:700; color:var(--paper); margin-bottom:4px; }
+.trz-name .zh { color:var(--gold-bright); margin-right:4px; }
+.trz-own { font-size:.72rem; color:var(--el-wood); margin-left:5px; }
+.trz-desc { font-size:.8rem; line-height:1.55; color:var(--paper-dim); margin-bottom:5px; }
+.trz-eff { font-size:.8rem; color:var(--gold-bright); margin-bottom:3px; }
+.trz-holder { font-size:.78rem; color:var(--paper-dim); }
+
+/* ===== Marriage tabs / send-bride ===== */
+.mr-tabs { display:flex; gap:8px; margin-bottom:6px; }
+.mr-tab { flex:1; padding:9px; background:rgba(20,14,8,.4); border:1px solid rgba(201,162,74,.25);
+  border-radius:9px; color:var(--paper-dim); font-family:inherit; font-size:.86rem; font-weight:700; cursor:pointer; }
+.mr-tab.on { background:rgba(201,162,74,.18); border-color:var(--gold); color:var(--gold-bright); }
+.mr-lbl { display:block; font-size:.8rem; color:var(--paper-dim); margin:10px 0 6px; font-weight:600; }
+.mr-ladies { display:flex; flex-wrap:wrap; gap:8px; }
+.mr-lady { display:flex; flex-direction:column; align-items:flex-start; gap:1px; min-width:108px;
+  background:rgba(20,14,8,.45); border:1px solid rgba(201,162,74,.28); border-radius:10px; padding:9px 11px;
+  cursor:pointer; font-family:inherit; color:var(--paper); text-align:left; }
+.mr-lady:hover { border-color:var(--gold); }
+.mr-lady[data-sel="1"] { background:rgba(201,162,74,.2); border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset; }
+.mr-lady .zh { font-family:var(--font-zh); font-size:1.1rem; color:var(--gold-bright); }
+.mr-lady b { font-size:.86rem; }
+.mr-lady .muted { font-size:.72rem; }
+
+/* ===== Birth / coming-of-age / naming ===== */
+.born-card { text-align:center; padding:6px 4px 4px; }
+.born-icon { font-size:2.6rem; }
+.born-zh { font-family:var(--font-zh); font-size:1.5rem; color:var(--gold-bright); margin-top:2px; }
+.born-stats { margin-top:10px; font-size:.84rem; color:var(--paper); background:rgba(20,14,8,.4);
+  border:1px solid rgba(201,162,74,.25); border-radius:8px; padding:7px 10px; display:inline-block; }
+.name-form { margin-top:14px; text-align:left; }
+.name-chips { display:flex; flex-wrap:wrap; gap:7px; }
+.name-chip { display:flex; flex-direction:column; align-items:center; gap:1px; padding:6px 11px;
+  background:rgba(20,14,8,.45); border:1px solid rgba(201,162,74,.28); border-radius:9px; cursor:pointer;
+  font-family:inherit; color:var(--paper-dim); font-size:.72rem; }
+.name-chip:hover { border-color:var(--gold); color:var(--gold-bright); }
+.name-chip .zh { font-family:var(--font-zh); font-size:1.15rem; color:var(--gold-bright); }
+.name-inputs { display:flex; gap:8px; margin-top:10px; }
+.name-inputs .court-input { flex:1; min-width:0; }
+.name-inputs #nameZh { flex:none; width:80px; font-family:var(--font-zh); text-align:center; }
+.m-badge { position:absolute; top:-12px; left:-13px; pointer-events:none; }
+.m-badge .el-badge { width:17px; height:17px; font-size:.66rem; }
+
+.m-label { font-family:var(--font-zh); font-size:.62rem; font-weight:700; color:#1a120a; line-height:1; margin-top:2px;
+  white-space:nowrap; text-shadow:0 0 3px #fff, 0 0 3px #fff, 0 0 4px #fff; pointer-events:none; }
+.m-label small { display:none; }
+.m-small .m-label { display:none; }
+.marker:hover .m-label, .marker.active .m-label { display:block; }
+.map-stage.zoomed .m-small .m-label { display:block; }
+.marker.active .m-label { color:#000; font-size:.66rem; }
+.m-large .m-label { font-size:.74rem; }
+
+.marker.attack-target .m-dot { animation:atkPulse 1s infinite; }
+@keyframes atkPulse { 0%,100%{ box-shadow:0 0 0 2px var(--el-fire);} 50%{ box-shadow:0 0 0 6px rgba(210,75,58,.25), 0 0 14px var(--el-fire);} }
+.marker.transfer-target .m-dot { animation:trPulse 1s infinite; }
+@keyframes trPulse { 0%,100%{ box-shadow:0 0 0 2px var(--el-wood);} 50%{ box-shadow:0 0 0 6px rgba(78,168,119,.25), 0 0 14px var(--el-wood);} }
+.marker.attack-target .m-label, .marker.transfer-target .m-label { display:block; }
+.el-badge { width:20px; height:20px; border-radius:6px; display:inline-grid; place-items:center; font-size:.78rem; font-weight:700; color:#fff; box-shadow:0 1px 4px rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.25); }
+.el-badge.big { width:38px; height:38px; font-size:1.3rem; border-radius:9px; }
+
+/* ---------- side panel ---------- */
+.side { background:linear-gradient(180deg, rgba(26,21,15,.98), rgba(18,14,10,.98)); border-left:1px solid var(--line);
+  display:flex; flex-direction:column; overflow:hidden; }
+.side-sec { padding:14px 16px; border-bottom:1px solid var(--line-soft); }
+.side-sec.grow { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.side-title { font-size:.74rem; letter-spacing:.08em; color:var(--gold); text-transform:uppercase; margin-bottom:9px; font-weight:700; }
+#pvDetail .pv-head { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+.pv-zh { font-family:var(--font-zh); font-size:1.5rem; color:var(--gold-bright); line-height:1; }
+.pv-th { font-size:.86rem; margin-top:2px; }
+.pv-owner { font-size:.78rem; font-weight:700; text-align:right; }
+.pv-stats { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:12px; }
+.pv-stat { background:rgba(255,255,255,.03); border:1px solid var(--line-soft); border-radius:8px; padding:7px 10px; display:flex; justify-content:space-between; align-items:center; }
+.pv-stat span { font-size:.74rem; color:var(--paper-dim); }
+.pv-stat b { font-size:.95rem; }
+.pv-gens { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+.gen-chip { font-size:.74rem; padding:3px 8px; border:1px solid; border-radius:999px; background:rgba(255,255,255,.03); }
+.pv-actions { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:12px; }
+.pv-actions .btn { padding:8px 9px; font-size:.78rem; text-align:left; line-height:1.15; }
+.pv-actions .btn small { display:block; font-size:.62rem; font-weight:400; opacity:.7; }
+.pv-city { width:100%; margin-top:8px; }
+.pv-diplo { font-size:.8rem; margin:10px 0 7px; }
+.pv-diplo+.btn { width:100%; }
+
+#logBox { flex:1; overflow-y:auto; font-size:.74rem; line-height:1.5; padding-right:4px; }
+.log-row { display:flex; gap:7px; padding:3px 0; border-bottom:1px solid rgba(255,255,255,.03); }
+.log-yr { color:var(--gold-deep); font-variant-numeric:tabular-nums; flex-shrink:0; font-weight:700; }
+.endturn-wrap { padding:12px 16px; border-top:1px solid var(--line); }
+#btnEndTurn { width:100%; padding:13px; font-size:1.02rem; }
+
+/* ---------- modal internals ---------- */
+.modal-head { display:flex; justify-content:space-between; align-items:flex-start; padding:18px 20px 0; }
+.modal-x { background:none; border:none; color:var(--paper-dim); font-size:1.3rem; cursor:pointer; }
+.modal-x:hover { color:var(--gold-bright); }
+#modalBody { padding:16px 20px; }
+#modalFoot { display:flex; gap:9px; justify-content:flex-end; padding:0 20px 18px; }
+.modal-btn-row { display:flex; gap:10px; justify-content:center; margin-top:16px; }
+
+/* diplomacy */
+.dp-tabs { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+.dp-tab { font-size:.76rem; padding:5px 10px; border:1px solid var(--line); border-radius:999px; background:rgba(255,255,255,.03); color:var(--paper-dim); cursor:pointer; }
+.dp-tab.on { border-color:var(--fc); color:#fff; background:color-mix(in oklab, var(--fc) 22%, transparent); }
+.dp-tab .zh { color:var(--fc); font-weight:700; }
+.dp-info { background:rgba(255,255,255,.03); border:1px solid var(--line-soft); border-radius:10px; }
+.dp-row { display:flex; justify-content:space-between; font-size:.84rem; padding:4px 0; }
+.dp-row span { color:var(--paper-dim); }
+.att-bar { height:7px; border-radius:4px; background:rgba(0,0,0,.4); overflow:hidden; margin-top:7px; }
+.att-bar span { display:block; height:100%; }
+.dp-acts { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:14px; }
+.dp-acts .btn { font-size:.82rem; }
+
+/* espionage */
+.sp-section { margin-bottom:16px; }
+.sp-h { font-size:.82rem; color:var(--gold); font-weight:700; margin-bottom:8px; }
+.sp-card { background:rgba(255,255,255,.03); border:1px solid var(--line-soft); border-radius:9px; padding:10px 12px; margin-bottom:8px; }
+.sp-card-top { display:flex; justify-content:space-between; margin-bottom:7px; font-size:.85rem; }
+.sp-acts { display:flex; flex-wrap:wrap; gap:6px; }
+.sp-acts .btn { font-size:.76rem; padding:6px 9px; }
+.sp-send { display:flex; gap:7px; flex-wrap:wrap; }
+.sel { background:var(--ink-800); color:var(--paper); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-family:var(--font-th); flex:1; min-width:130px; }
+
+/* marriage */
+.mr-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+.mr-card { background:rgba(255,255,255,.03); border:1px solid var(--line-soft); border-radius:10px; padding:11px; }
+.mr-top { display:flex; gap:9px; align-items:center; margin-bottom:9px; }
+
+/* generals */
+.gn-list { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.gn-card { background:rgba(255,255,255,.03); border:1px solid var(--line-soft); border-left:3px solid; border-radius:10px; padding:12px; }
+.gn-main { display:flex; gap:10px; align-items:center; }
+.gn-id b { font-size:.95rem; }
+.gn-stats { display:flex; gap:10px; font-size:.78rem; color:var(--paper-dim); margin-top:9px; font-variant-numeric:tabular-nums; }
+.gn-rel { margin-top:7px; line-height:1.5; }
+
+/* reform tree */
+.rf-branch { position:relative; height:34px; margin:-4px 0 4px;
+  background:linear-gradient(90deg, transparent, rgba(125,90,51,.55) 12%, rgba(160,115,66,.7) 50%, rgba(125,90,51,.55) 88%, transparent);
+  background-size:100% 2px; background-position:0 70%; background-repeat:no-repeat; }
+.rf-branch .blossom { position:absolute; top:50%; width:13px; height:13px; border-radius:50%;
+  background:radial-gradient(circle at 40% 35%, #ffd9e2, #f3a3bd 60%, #d56f93);
+  box-shadow:0 0 0 3px rgba(243,163,189,.18), 7px -2px 0 -3px #f3a3bd, -7px 2px 0 -3px #ffd0dc;
+  transform:translateY(-50%); }
+.rf-branch .blossom::after { content:""; position:absolute; inset:0; margin:auto; width:4px; height:4px; border-radius:50%; background:#caa23f; }
+.rf-branch .b1{ left:14%; top:38%; } .rf-branch .b2{ left:33%; top:64%; }
+.rf-branch .b3{ left:52%; top:36%; } .rf-branch .b4{ left:70%; top:62%; } .rf-branch .b5{ left:86%; top:42%; }
+.rf-banner { text-align:center; font-weight:700; color:var(--gold-bright); margin-bottom:14px; font-size:.9rem; }
+.rf-tree { display:flex; gap:14px; overflow-x:auto; padding-bottom:8px; }
+.rf-col { display:flex; flex-direction:column; gap:12px; min-width:150px; }
+.rf-node { background:rgba(255,255,255,.03); border:1px solid var(--line-soft); border-radius:12px; padding:12px; text-align:center; position:relative; }
+.rf-node.has { border-color:var(--el-wood); background:color-mix(in oklab, var(--el-wood) 10%, transparent); }
+.rf-node.locked { opacity:.45; }
+.rf-ic { font-size:1.7rem; }
+.rf-zh { font-size:1.05rem; color:var(--gold-bright); margin-top:2px; }
+.rf-th { font-size:.8rem; font-weight:600; }
+.rf-eff { font-size:.7rem; margin:6px 0 9px; line-height:1.4; }
+.rf-node .btn { width:100%; font-size:.78rem; padding:6px; }
+.rf-tag.done { color:var(--el-wood); font-size:.78rem; font-weight:700; }
+
+/* city */
+.cty-hero { text-align:center; padding:6px 0 12px; }
+.cty-zh { font-family:var(--font-zh); font-size:2.4rem; color:var(--gold-bright); line-height:1; }
+.cty-th { color:var(--paper-dim); margin-top:3px; }
+.cty-stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
+.cty-s { background:rgba(255,255,255,.03); border:1px solid var(--line-soft); border-left:3px solid var(--cinnabar); border-radius:8px; padding:9px 12px; display:flex; justify-content:space-between; align-items:center; }
+.cty-s span { font-size:.76rem; color:var(--paper-dim); }
+.cty-h { font-size:.84rem; color:var(--gold); font-weight:700; margin:6px 0 9px; }
+.cty-acts { display:grid; grid-template-columns:1fr 1fr 1fr; gap:7px; margin-bottom:14px; }
+.cty-acts .btn { font-size:.78rem; }
+.cty-officers { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.cty-off { display:flex; gap:9px; align-items:center; background:rgba(255,255,255,.03); border:1px solid var(--line-soft); border-radius:9px; padding:9px; }
+
+/* capture / event */
+.cap-gen { display:flex; gap:14px; align-items:center; }
+.ev-zh { font-family:var(--font-brush); font-size:2.2rem; color:var(--gold-bright); text-align:center; }
+.ev-body { color:var(--paper-dim); line-height:1.9; margin-top:10px; text-wrap:pretty; text-align:justify; }
+.ev-outcome { color:var(--paper-2); }
+.ev-choices { display:flex; flex-direction:column; gap:8px; margin-top:16px; }
+.ev-choice { display:flex; flex-direction:column; gap:3px; text-align:left; cursor:pointer;
+  background:rgba(20,14,8,.5); border:1px solid var(--line); border-radius:10px; padding:11px 14px;
+  color:var(--paper); font-family:inherit; transition:background .12s, border-color .12s, transform .08s; }
+.ev-choice:hover { background:rgba(201,162,74,.12); border-color:var(--gold); transform:translateX(2px); }
+.ev-choice.is-disabled { opacity:.45; cursor:not-allowed; }
+.ev-choice.is-disabled:hover { background:rgba(20,14,8,.5); border-color:var(--line); transform:none; }
+.ev-choice-label { font-weight:700; font-size:1rem; }
+.ev-choice-hint { font-size:.78rem; color:var(--gold-bright); letter-spacing:.01em; }
+/* faction goals (เป้าหมายประจำก๊ก) */
+.goal-trait { margin-top:12px; font-size:.84rem; line-height:1.6; color:var(--paper-2);
+  background:rgba(20,14,8,.4); border-left:3px solid var(--gold); border-radius:0 8px 8px 0; padding:9px 12px; }
+.goal-card { margin-top:14px; background:linear-gradient(180deg, rgba(201,162,74,.1), rgba(201,162,74,.04));
+  border:1px solid rgba(201,162,74,.34); border-radius:12px; padding:14px 15px; }
+.goal-card-h { display:flex; align-items:center; gap:13px; }
+.goal-zh { font-size:2rem; color:var(--gold-bright); line-height:1; flex-shrink:0; }
+.goal-card-title { font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); font-weight:700; }
+.goal-card-name { font-size:1.05rem; font-weight:700; color:var(--paper); }
+.goal-card-desc { margin-top:8px; font-size:.9rem; line-height:1.6; color:var(--paper-dim); text-wrap:pretty; }
+.goal-prog { margin-top:12px; }
+.goal-prog-bar { height:8px; border-radius:5px; background:rgba(20,14,8,.6); overflow:hidden; border:1px solid var(--line-soft); }
+.goal-prog-bar span { display:block; height:100%; border-radius:5px; background:linear-gradient(90deg,var(--gold),var(--gold-bright)); transition:width .4s; }
+.goal-prog-txt { margin-top:6px; font-size:.82rem; color:var(--paper-dim); text-align:right; font-variant-numeric:tabular-nums; }
+.goal-done-banner { margin-top:10px; text-align:center; font-weight:800; letter-spacing:.02em; color:#1a120a;
+  background:linear-gradient(90deg,var(--gold),var(--gold-bright)); border-radius:9px; padding:9px; font-size:1rem; }
+
+/* ============================================================ BATTLE */
+#battleOverlay { position:fixed; inset:0; z-index:300; display:none; align-items:center; justify-content:center; padding:20px;
+  background:radial-gradient(120% 100% at 50% 0%, #2a1e12 0%, #0c0805 70%); }
+#battleOverlay.show { display:flex; }
+.bt-wrap { width:min(1000px,98vw); max-height:96vh; overflow:auto; }
+.bt-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.bt-field { display:grid; grid-template-columns:1fr 56px 1fr; gap:12px; align-items:stretch; }
+.bt-side { display:flex; flex-direction:column; gap:9px; padding:12px; border-radius:14px; background:rgba(20,15,10,.6); border:1px solid var(--line-soft); }
+.bt-enemy { border-color:rgba(210,75,58,.3); }
+.bt-mine { border-color:rgba(78,168,119,.3); }
+.bt-side-label { font-size:.78rem; font-weight:700; color:var(--paper-dim); margin-bottom:2px; }
+.bt-empty { text-align:center; padding:20px 0; }
+.bt-vs { display:grid; place-items:center; font-family:var(--font-zh); font-size:1.6rem; color:var(--gold); }
+.bt-unit { border:1.5px solid; border-radius:12px; padding:10px; background:rgba(255,255,255,.03); }
+.bt-unit-top { display:flex; align-items:center; gap:9px; }
+.bt-shield { width:38px; height:38px; border-radius:9px; display:grid; place-items:center; color:#fff; font-size:1.3rem; font-weight:700; flex-shrink:0; border:1px solid rgba(255,255,255,.25); }
+.bt-shield.big { width:64px; height:64px; font-size:2rem; }
+.bt-unit-id { flex:1; }
+.bt-unit-name { font-size:.92rem; font-weight:700; }
+.bt-el { font-size:.7rem; }
+.bt-troops { font-size:1.1rem; font-weight:800; color:var(--gold-bright); }
+.bt-retinue { display:flex; gap:4px; margin:8px 0 7px; }
+.pip { flex:1; height:7px; border-radius:3px; background:rgba(255,255,255,.08); }
+.pip.on { background:var(--pc); box-shadow:0 0 6px var(--pc); }
+.bt-bars .bar { height:6px; border-radius:3px; background:rgba(0,0,0,.4); overflow:hidden; margin-bottom:4px; }
+.bt-bars .bar span { display:block; height:100%; }
+.bt-bars .bar.morale span { background:linear-gradient(90deg,#caa23f,#e8c878); }
+.bt-log { margin:14px 0; padding:11px 14px; background:rgba(0,0,0,.35); border:1px solid var(--line-soft); border-radius:10px; font-size:.8rem; line-height:1.6; min-height:60px; }
+.bt-orders { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; }
+.bt-orders .btn { padding:11px; }
+.bt-orders .btn small { display:block; font-size:.64rem; font-weight:400; opacity:.7; }
+
+#duelStage { position:fixed; inset:0; z-index:320; display:none; align-items:center; justify-content:center; padding:24px; background:rgba(8,6,4,.8); backdrop-filter:blur(7px); }
+#duelStage.show { display:flex; }
+.duel-box { width:min(520px,96vw); padding:26px; text-align:center; }
+.duel-title { font-size:1.4rem; color:var(--gold-bright); margin-bottom:18px; }
+.duel-arena { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:14px; }
+.duel-fighter { display:flex; flex-direction:column; align-items:center; gap:7px; }
+.duel-name { font-weight:700; font-size:1.05rem; }
+.duel-vs { font-family:var(--font-zh); font-size:2.2rem; color:var(--cinnabar-br); }
+
+@media (max-width:1180px){ .body { grid-template-columns:1fr 332px; } }@media (max-width:880px){
+  .app { grid-template-rows:auto auto auto; height:auto; min-height:100vh; }
+  .body { grid-template-columns:1fr; }
+  .map-area { padding:14px; }
+  .side { border-left:0; border-top:1px solid var(--line); }
+  .topbar { flex-wrap:wrap; }
+  .tb-tools { width:100%; margin-left:0; }
+}
+
+/* ============================================================ GENERALS HALL · ทำเนียบขุนพล */
+.hall-tabs { display:flex; gap:8px; margin-bottom:14px; }
+.hall-tab { flex:1; padding:10px; background:rgba(20,14,8,.45); border:1px solid rgba(201,162,74,.25);
+  border-radius:10px; color:var(--paper-dim); font-family:inherit; font-size:.9rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px; }
+.hall-tab.on { border-color:var(--gold); color:var(--gold-bright); background:rgba(201,162,74,.12); }
+.hall-ct { font-size:.72rem; background:rgba(201,162,74,.22); color:var(--gold-bright); border-radius:999px; padding:1px 8px; font-variant-numeric:tabular-nums; }
+.hall-back { background:none; border:none; color:var(--gold); font-family:inherit; font-size:.86rem; font-weight:700; cursor:pointer; margin-bottom:10px; padding:0; }
+.hall-back:hover { color:var(--gold-bright); }
+
+.gn-card { cursor:pointer; transition:border-color .14s, transform .14s, background .14s; }
+.gn-card:hover { border-color:var(--gold); transform:translateY(-1px); background:rgba(255,255,255,.05); }
+.gn-card.is-lady { border-left-color:#c97ba6 !important; }
+.gn-title { font-size:.72rem; color:var(--gold); margin-top:3px; font-weight:600; }
+.gn-where { font-size:.7rem; color:var(--paper-dim); margin-top:2px; }
+.gn-stats { display:flex; flex-wrap:wrap; gap:8px; }
+.gn-agetag { font-size:.7rem; color:var(--paper-dim); margin-top:6px; }
+
+/* general detail */
+.gn-detail { background:rgba(255,255,255,.03); border:1px solid var(--line-soft); border-radius:12px; padding:16px; }
+.gn-det-head { display:flex; gap:14px; align-items:center; }
+.gn-portrait { width:54px !important; height:54px !important; font-size:1.8rem !important; border-radius:12px !important; flex-shrink:0; }
+.gn-det-name { font-size:1.2rem; font-weight:700; }
+.gn-det-title { font-size:.78rem; color:var(--paper-dim); margin-top:4px; }
+.gn-consort { font-size:.7rem; color:#e0a3c5; border:1px solid rgba(224,163,197,.4); border-radius:999px; padding:1px 8px; margin-left:4px; }
+.gn-bio { font-family:var(--font-th); font-size:.88rem; line-height:1.7; color:var(--paper-2); margin:14px 0; padding-left:12px; border-left:2px solid var(--gold-deep); font-style:italic; }
+.gn-det-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+.gn-st { background:rgba(0,0,0,.25); border:1px solid var(--line-soft); border-radius:8px; padding:7px 10px; display:flex; justify-content:space-between; align-items:center; }
+.gn-st span { font-size:.72rem; color:var(--paper-dim); }
+.gn-st b { font-size:1rem; font-variant-numeric:tabular-nums; }
+.gn-treas { margin-top:10px; font-size:.82rem; color:var(--gold-bright); }
+.gn-relwrap { margin-top:14px; }
+.gn-relh { font-size:.76rem; color:var(--gold); font-weight:700; margin-bottom:7px; }
+.rel-pill { display:inline-block; font-size:.74rem; padding:3px 9px; border-radius:999px; margin:0 5px 5px 0; border:1px solid var(--line-soft); background:rgba(255,255,255,.03); }
+.rel-love { color:#e3b34f; border-color:rgba(227,179,79,.4); }
+.rel-like { color:var(--el-wood); border-color:rgba(78,168,119,.4); }
+.rel-dislike { color:#d98a6a; }
+.rel-hate { color:var(--el-fire); border-color:rgba(210,75,58,.4); }
+.gn-cmd { margin-top:16px; border-top:1px solid var(--line-soft); padding-top:14px; display:flex; flex-direction:column; gap:8px; }
+.gn-cmd-row { display:flex; gap:8px; }
+.gn-cmd-row .btn { flex:1; font-size:.8rem; text-align:center; }
+.gn-cmd-row .btn small { display:block; font-size:.62rem; opacity:.7; font-weight:400; }
+.gn-cmd-row .court-select { flex:1; }
+.gn-note { margin-top:14px; background:rgba(201,162,74,.08); border:1px solid var(--line-soft); border-radius:9px; padding:11px 13px; font-size:.82rem; color:var(--paper-dim); text-align:center; }
+
+/* recruit-wanderer dialogue */
+.rec-scene { display:flex; gap:14px; align-items:center; }
+.rec-portrait { width:54px !important; height:54px !important; font-size:1.8rem !important; border-radius:12px !important; flex-shrink:0; }
+.rec-name { font-size:1.18rem; font-weight:700; }
+.rec-stats { font-size:.78rem; color:var(--paper-dim); margin-top:5px; font-variant-numeric:tabular-nums; }
+.rec-bubble { background:linear-gradient(180deg, rgba(201,162,74,.12), rgba(201,162,74,.05)); border:1px solid var(--line); border-radius:12px;
+  padding:14px 16px; font-size:1rem; line-height:1.7; color:var(--paper); margin:6px 0 12px; position:relative; }
+.rec-mood { font-size:.82rem; color:var(--paper-dim); display:flex; align-items:center; gap:9px; }
+.rec-meter { flex:1; height:7px; border-radius:4px; background:rgba(0,0,0,.4); overflow:hidden; max-width:200px; }
+.rec-meter span { display:block; height:100%; transition:width .3s; }
+
+/* marriage card extras */
+.mr-card.is-lady { border-color:rgba(201,123,166,.35); }
+.mr-bio { font-size:.74rem; line-height:1.55; color:var(--paper-dim); font-style:italic; margin-bottom:8px; }
+.mr-mini { font-size:.74rem; color:var(--gold); margin-bottom:9px; font-variant-numeric:tabular-nums; }
+.mr-sech { font-size:.82rem; color:var(--gold); font-weight:700; margin:4px 0 9px; display:flex; align-items:center; gap:8px; }
+
+/* ===== Clan genealogy · พงศาวลีตระกูล · 族譜 ===== */
+.clan-banner { display:flex; gap:14px; align-items:center; padding:14px 4px 16px; border-bottom:1px solid var(--line-soft); margin-bottom:14px; }
+.clan-crest { width:56px; height:56px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+  font-size:1.7rem; font-weight:700; color:#fff; flex:0 0 auto;
+  background:linear-gradient(150deg, color-mix(in oklab, var(--pc) 88%, #000), color-mix(in oklab, var(--pc) 55%, #000));
+  border:1.5px solid var(--gold-bright); box-shadow:inset 0 0 0 1px rgba(0,0,0,.3), 0 6px 18px -8px rgba(0,0,0,.7); }
+.clan-bname { font-family:var(--font-disp); font-size:1.32rem; color:var(--gold-bright); letter-spacing:.03em; }
+.clan-bsub { font-size:.82rem; color:var(--paper-dim); margin-top:2px; }
+.clan-bchips { display:flex; flex-wrap:wrap; gap:7px; margin-top:9px; }
+.clan-chip { font-size:.74rem; font-weight:600; color:var(--paper-2); background:rgba(201,162,74,.1);
+  border:1px solid var(--line); border-radius:999px; padding:3px 10px; }
+.clan-scroll { overflow-x:auto; padding:4px 2px 8px; }
+.clan-sech { font-size:.82rem; color:var(--gold); font-weight:700; margin:18px 0 4px; padding-top:12px; border-top:1px solid var(--line-soft); }
+.clan-hint { font-size:.8rem; line-height:1.6; color:var(--paper-dim); text-align:center; max-width:420px; margin:14px auto 0;
+  background:rgba(201,162,74,.06); border:1px dashed var(--line); border-radius:10px; padding:11px 14px; }
+
+/* tree layout (org-chart connectors) */
+.ftree { display:flex; justify-content:center; min-width:max-content; padding:8px 6px; }
+.ftree ul { display:flex; justify-content:center; padding-top:24px; position:relative; }
+.ftree li { list-style:none; position:relative; padding:24px 12px 0; display:flex; flex-direction:column; align-items:center; }
+/* connectors from each node up to the sibling bus */
+.ftree li::before, .ftree li::after { content:''; position:absolute; top:0; width:50%; height:24px; border-top:2px solid var(--line); }
+.ftree li::before { right:50%; }
+.ftree li::after  { left:50%; border-left:2px solid var(--line); }
+.ftree li:only-child::before, .ftree li:only-child::after { display:none; }
+.ftree li:only-child { padding-top:24px; }
+.ftree li:first-child::before, .ftree li:last-child::after { border:0; }
+.ftree li:last-child::before { border-right:2px solid var(--line); border-radius:0 7px 0 0; }
+.ftree li:first-child::after { border-radius:7px 0 0 0; }
+/* vertical drop from a couple down to its children's bus */
+.ftree ul ul::before { content:''; position:absolute; top:0; left:50%; width:2px; height:24px; background:var(--line); transform:translateX(-50%); }
+/* the root couple has no top connector */
+.ftree > ul > li::before, .ftree > ul > li::after { display:none; }
+.ftree > ul > li { padding-top:0; }
+.ftree.branch { opacity:.96; }
+
+/* a couple (person + spouse(s)) */
+.clan-couple { display:inline-flex; align-items:stretch; gap:0; position:relative; }
+.clan-heart { display:flex; align-items:center; padding:0 5px; color:var(--cinnabar-br); font-size:.86rem; align-self:center; }
+
+/* person card */
+.clan-person { display:flex; gap:9px; align-items:center; text-align:left; min-width:138px;
+  background:linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015));
+  border:1px solid var(--line); border-top:3px solid var(--pc,var(--bronze)); border-radius:10px; padding:8px 11px 8px 9px;
+  box-shadow:0 4px 14px -8px rgba(0,0,0,.6); }
+.clan-person.is-lord { border-color:var(--gold); border-top-color:var(--gold-bright);
+  background:linear-gradient(180deg, rgba(201,162,74,.16), rgba(201,162,74,.04)); box-shadow:0 6px 20px -8px rgba(201,162,74,.45); }
+.clan-person.is-lady { border-top-color:#c97ba6; }
+.clan-person.is-child { border-top-color:var(--el-water); border-style:dashed; }
+.clan-badge { width:34px; height:34px; flex:0 0 auto; border-radius:8px; display:flex; align-items:center; justify-content:center;
+  font-size:1rem; font-weight:700; color:#fff;
+  background:linear-gradient(150deg, color-mix(in oklab, var(--pc,var(--bronze)) 85%, #000), color-mix(in oklab, var(--pc,var(--bronze)) 50%, #000));
+  border:1px solid rgba(255,255,255,.14); }
+.clan-pname { font-size:.86rem; font-weight:700; color:var(--paper); white-space:nowrap; }
+.clan-pname .zh { font-size:.74rem; font-weight:400; }
+.clan-prole { font-size:.7rem; color:var(--gold); margin-top:1px; white-space:nowrap; }
+.clan-pstat { font-size:.68rem; color:var(--paper-dim); margin-top:2px; white-space:nowrap; }
+
+/* ============================================================ NEW SYSTEMS (v3) */
+/* season chip */
+.tb-season .v { font-size:.78rem; color:var(--paper); font-weight:600; white-space:nowrap; }
+.tb-season .v .zh { font-family:var(--font-zh); color:var(--gold-bright); margin-left:2px; }
+
+/* treasury hover tooltip */
+.tb-gold { position:relative; cursor:help; }
+.gold-tip { position:absolute; top:calc(100% + 8px); right:0; z-index:60; width:268px;
+  background:linear-gradient(180deg, rgba(30,23,15,.99), rgba(18,13,9,.99));
+  border:1px solid var(--gold); border-radius:12px; padding:13px 14px; box-shadow:var(--shadow-md);
+  opacity:0; visibility:hidden; transform:translateY(-4px); transition:opacity .16s, transform .16s; text-align:left; }
+.tb-gold:hover .gold-tip { opacity:1; visibility:visible; transform:translateY(0); }
+.gtip-h { font-size:.82rem; font-weight:700; color:var(--gold-bright); margin-bottom:9px; }
+.gtip-row { display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:.78rem; color:var(--paper-dim); padding:2px 0; }
+.gtip-row b { font-variant-numeric:tabular-nums; }
+.gtip-net { border-top:1px dotted var(--line-soft); margin-top:3px; padding-top:5px; color:var(--paper); font-weight:600; }
+.gtip-div { height:1px; background:var(--line-soft); margin:9px 0; }
+.gtip-sub { font-size:.68rem; color:var(--gold); letter-spacing:.04em; margin-bottom:4px; }
+.gtip-warn { margin-top:9px; font-size:.7rem; line-height:1.45; color:var(--el-fire);
+  background:rgba(210,75,58,.1); border:1px solid rgba(210,75,58,.35); border-radius:7px; padding:6px 8px; }
+
+/* succession modal */
+.suc-head { text-align:center; margin-bottom:6px; }
+.suc-zh { font-family:var(--font-brush,var(--font-zh)); font-size:2.1rem; color:var(--el-fire); }
+.suc-list { display:flex; flex-direction:column; gap:9px; margin-top:6px; }
+.suc-cand { display:flex; gap:12px; align-items:center; background:rgba(255,255,255,.03);
+  border:1px solid var(--line-soft); border-radius:11px; padding:11px 13px; cursor:pointer; transition:border-color .15s, background .15s; }
+.suc-cand:hover { border-color:var(--gold); }
+.suc-cand.on { border-color:var(--gold-bright); background:rgba(201,162,74,.14); box-shadow:0 0 0 1px var(--gold) inset; }
+.suc-cn { font-size:.95rem; font-weight:700; color:var(--paper); }
+.suc-tag { font-size:.7rem; color:var(--gold-bright); margin-left:4px; }
+.suc-cr { font-size:.74rem; color:var(--gold); margin-top:1px; }
+.suc-cs { font-size:.72rem; color:var(--paper-dim); margin-top:2px; }
+
+/* governance */
+.gov-buffs { background:rgba(20,14,8,.4); border:1px solid rgba(201,162,74,.28); border-radius:12px; padding:13px 15px; }
+.gov-bh { font-size:.86rem; font-weight:700; color:var(--gold-bright); margin-bottom:10px; }
+.gov-bgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.gov-buff { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:.78rem; color:var(--paper-dim);
+  background:rgba(255,255,255,.03); border:1px solid var(--line-soft); border-radius:8px; padding:7px 10px; }
+.gov-buff b { font-variant-numeric:tabular-nums; }
+.gov-posts { display:flex; flex-direction:column; gap:10px; }
+.gov-post { background:rgba(255,255,255,.03); border:1px solid var(--line-soft); border-radius:11px; padding:11px 13px;
+  display:grid; grid-template-columns:1fr auto; gap:9px 12px; align-items:center; }
+.gov-pi { display:flex; gap:11px; align-items:center; }
+.gov-pic { font-size:1.5rem; }
+
+/* ============================================================ MOBILE · โทรศัพท์ */
+@media (max-width:760px){
+  html,body{ -webkit-text-size-adjust:100%; }
+  .app{ grid-template-rows:auto 1fr; height:100vh; }
+  .topbar{ gap:8px; padding:7px 10px; flex-wrap:wrap; row-gap:7px; }
+  .brand{ gap:8px; }
+  .crest{ width:34px; height:34px; font-size:1.05rem; }
+  .brand .fz{ font-size:.9rem; max-width:38vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .brand .fl{ font-size:.66rem; }
+  /* stats: single scrollable strip, never wrap */
+  .tb-stats{ order:3; width:100%; gap:6px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:2px; }
+  .tb-stats::-webkit-scrollbar{ height:0; }
+  .tb-stat{ min-width:auto; padding:4px 10px; flex:0 0 auto; }
+  .tb-stat .v{ font-size:.9rem; }
+  .tb-season .v{ font-size:.7rem; }
+  /* tools: horizontal scroll strip with comfy tap targets */
+  .tb-tools{ order:4; width:100%; margin-left:0; gap:6px; flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:2px; }
+  .tb-tools::-webkit-scrollbar{ height:0; }
+  .tb-tools .btn{ flex:0 0 auto; min-height:42px; padding:8px 12px; font-size:.82rem; white-space:nowrap; }
+
+  /* body becomes a vertical scroll: map on top, panel below, end-turn pinned */
+  .body{ grid-template-columns:1fr; grid-template-rows:auto 1fr; overflow-y:auto; overflow-x:hidden; }
+  .map-area{ padding:10px; }
+  .map-viewport{ width:100%; }
+  .map-zoom-hint{ left:14px; bottom:14px; font-size:.6rem; }
+  .map-zoom-ctrl{ right:14px; bottom:14px; }
+  .map-zoom-ctrl button{ width:42px; height:42px; }
+  .lang-toggle button{ width:40px; height:36px; }
+  .layer-toggle button{ height:34px; }
+  .side{ border-left:0; border-top:1px solid var(--line); }
+  .side-sec.grow{ min-height:150px; }
+  #logBox{ max-height:32vh; }
+  .endturn-wrap{ position:sticky; bottom:0; z-index:25; background:linear-gradient(180deg, rgba(20,15,10,.4), rgba(18,14,10,.98)); backdrop-filter:blur(4px); }
+  #btnEndTurn{ min-height:50px; }
+
+  /* modals fill the small screen */
+  .overlay{ padding:8px; align-items:flex-start; }
+  .overlay > .card, .overlay.wide > .card{ width:100%; max-height:94vh; }
+  .modal-head{ padding:14px 15px 0; }
+  #modalBody{ padding:13px 15px; }
+  #modalFoot{ padding:0 15px 14px; flex-wrap:wrap; }
+  #modalFoot .btn{ flex:1 1 auto; min-height:46px; }
+  .modal-x{ font-size:1.5rem; padding:4px 6px; margin:-4px -4px 0 0; }
+
+  /* generous tap targets inside panels */
+  .btn{ min-height:42px; }
+  .hall-tab{ padding:11px 6px; font-size:.82rem; }
+  .hall-ct{ padding:1px 6px; }
+  .gn-cmd-row{ flex-direction:column; }
+  .gov-post{ grid-template-columns:1fr; }
+  .gov-holder{ justify-self:start; }
+  .bt-orders{ grid-template-columns:1fr 1fr; }
+  .bt-wrap{ width:96vw; }
+
+  /* treasury breakdown: tap to toggle on touch (no hover) */
+  .gold-tip{ width:min(268px,86vw); right:0; }
+  .tb-gold.tip-open .gold-tip{ opacity:1; visibility:visible; transform:translateY(0); }
+}
+
+@media (max-width:480px){
+  .tb-stats{ gap:5px; }
+  .tb-stat{ padding:4px 8px; }
+  .gn-list, .mr-grid, .cty-officers, .gov-bgrid, .cty-stats, .pv-stats{ grid-template-columns:1fr; }
+  .pv-actions{ grid-template-columns:1fr 1fr; }
+  .cty-acts{ grid-template-columns:1fr; }
+  .dp-acts, .mr-grid{ grid-template-columns:1fr; }
+  .gn-det-stats{ grid-template-columns:1fr 1fr; }
+  .suc-cand{ padding:10px; gap:9px; }
+  .modal-title{ font-size:1.05rem; }
+}
+.gov-pn { font-size:.9rem; font-weight:700; color:var(--paper); }
+.gov-pn .zh { font-family:var(--font-zh); font-size:.78rem; }
+.gov-pd { font-size:.72rem; margin-top:1px; }
+.gov-holder { font-size:.82rem; color:var(--gold-bright); display:flex; align-items:center; gap:6px; justify-self:end; }
+.gov-sel { grid-column:1 / -1; width:100%; }
+
+/* relationships tab */
+.rel-sec { margin-bottom:16px; }
+.rel-h { font-size:.84rem; font-weight:700; color:var(--gold); margin-bottom:9px; }
+.rel-bond { display:flex; align-items:center; gap:9px; background:rgba(255,255,255,.03); border:1px solid var(--line-soft);
+  border-radius:9px; padding:8px 12px; margin-bottom:7px; font-size:.86rem; color:var(--paper); }
+.rel-link { font-size:.95rem; }

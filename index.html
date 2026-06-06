@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三國 · 群雄逐鹿 — เลือกขุนศึก</title>
+<link rel="stylesheet" href="css/theme.css">
+<style>
+  .stage { min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:36px 20px 60px; }
+  .hero { text-align:center; margin-bottom:30px; position:relative; }
+  .hero .seal-top { display:inline-grid; place-items:center; width:74px; height:74px; border-radius:14px;
+    background:linear-gradient(180deg,var(--cinnabar-br),var(--cinnabar)); border:2px solid var(--gold-bright);
+    font-family:var(--font-zh); font-size:2.4rem; color:#fff; margin-bottom:16px; box-shadow:0 10px 30px -8px rgba(193,64,47,.7); }
+  .hero h1 { font-family:var(--font-zh); font-size:3rem; letter-spacing:.12em; color:var(--gold-bright);
+    text-shadow:0 2px 30px rgba(201,162,74,.3); }
+  .hero .romaji { font-family:var(--font-disp); font-size:1rem; letter-spacing:.34em; color:var(--paper-dim); margin-top:6px; text-transform:uppercase; }
+  .hero .tag { margin-top:14px; font-size:1.02rem; color:var(--paper); }
+  .hero .tag b { color:var(--gold); }
+
+  .panel { width:min(1080px,100%); }
+  .sec-label { font-size:.78rem; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); font-weight:700; margin:0 4px 12px; display:flex; align-items:center; gap:10px; }
+  .sec-label::after { content:""; flex:1; height:1px; background:var(--line); }
+
+  .wl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(248px,1fr)); gap:13px; margin-bottom:34px; }
+  .wl { position:relative; text-align:left; cursor:pointer; border:1px solid var(--line); border-radius:14px; padding:15px;
+    background:linear-gradient(180deg, rgba(40,33,25,.85), rgba(26,21,15,.9)); transition:transform .15s, box-shadow .15s, border-color .15s; overflow:hidden; }
+  .wl::before { content:""; position:absolute; right:-26px; top:-26px; width:96px; height:96px; border-radius:50%;
+    background:var(--fc); opacity:.16; filter:blur(8px); }
+  .wl:hover { transform:translateY(-3px); box-shadow:var(--shadow-md); border-color:var(--fc); }
+  .wl.sel { border-color:var(--gold-bright); box-shadow:0 0 0 1px var(--gold-bright), var(--shadow-md); }
+  .wl-top { display:flex; align-items:center; gap:11px; margin-bottom:10px; position:relative; }
+  .wl-crest { width:46px; height:46px; border-radius:10px; display:grid; place-items:center; font-family:var(--font-zh);
+    font-size:1.5rem; font-weight:700; color:#fff; background:var(--fc); border:1.5px solid var(--gold-bright); flex-shrink:0; }
+  .wl-name { font-family:var(--font-zh); font-size:1.18rem; color:var(--paper); line-height:1.1; }
+  .wl-name b { color:var(--gold-bright); }
+  .wl-cap { font-size:.72rem; color:var(--paper-dim); margin-top:2px; }
+  .wl-desc { font-size:.8rem; color:var(--paper-dim); line-height:1.5; min-height:48px; }
+  .wl-meta { display:flex; justify-content:space-between; align-items:center; margin-top:10px; }
+  .wl-diff { font-size:.72rem; color:var(--gold); }
+  .wl-el { font-size:.7rem; }
+
+  .wl-region { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:9px 0 5px; }
+  .wl-rg { font-family:var(--font-zh); font-size:.92rem; color:var(--gold-bright); letter-spacing:.04em; }
+  .wl-rgth { font-family:var(--font-th); font-size:.74rem; color:var(--gold); letter-spacing:0; }
+  .wl-cnt { font-size:.64rem; color:var(--paper-dim); border:1px solid var(--line); border-radius:6px; padding:1px 7px; white-space:nowrap; }
+  .wl-cities { font-size:.7rem; color:var(--paper-dim); line-height:1.5; margin-bottom:2px; }
+
+  .custom { display:none; }
+  .custom.on { display:block; }
+  .cst-box { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .field label { display:block; font-size:.76rem; color:var(--paper-dim); margin-bottom:5px; font-weight:600; }
+  .field input[type=text], .field select { width:100%; background:var(--ink-800); border:1px solid var(--line); color:var(--paper);
+    border-radius:9px; padding:10px 12px; font-family:var(--font-th); }
+  .field input[type=color] { width:100%; height:42px; border:1px solid var(--line); border-radius:9px; background:var(--ink-800); cursor:pointer; }
+  .cls-row { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:6px; }
+  .cls-opt { border:1px solid var(--line); border-radius:10px; padding:9px 6px; text-align:center; cursor:pointer; background:rgba(255,255,255,.02); transition:.14s; }
+  .cls-opt:hover { border-color:var(--ec); }
+  .cls-opt.sel { border-color:var(--ec); background:color-mix(in oklab,var(--ec) 16%, transparent); box-shadow:0 0 0 1px var(--ec); }
+  .cls-opt .zh { font-size:1.5rem; color:var(--ec); font-family:var(--font-zh); }
+  .cls-opt .cn { font-size:.72rem; font-weight:600; margin-top:2px; }
+  .cls-opt .el { font-size:.62rem; color:var(--paper-dim); }
+  .stat-pool { margin-top:16px; }
+  .stat-row { display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--line-soft); }
+  .stat-ctl { display:flex; align-items:center; gap:10px; }
+  .stat-ctl button { width:30px; height:30px; border-radius:8px; border:1px solid var(--line); background:var(--ink-700); color:var(--paper); font-weight:700; cursor:pointer; font-size:1.1rem; }
+  .stat-ctl button:hover:not(:disabled){ border-color:var(--gold); color:var(--gold-bright); }
+  .stat-ctl button:disabled{ opacity:.3; cursor:not-allowed; }
+  .stat-val { width:34px; text-align:center; font-weight:700; font-size:1.05rem; font-variant-numeric:tabular-nums; }
+  .pool-tag { color:var(--gold-bright); font-weight:700; }
+
+  .startbar { width:min(1080px,100%); display:flex; gap:14px; align-items:center; margin-top:30px; }
+  .startbar .hint { color:var(--paper-dim); font-size:.82rem; flex:1; }
+  #btnStart { padding:15px 34px; font-size:1.12rem; letter-spacing:.04em; }
+  .cls-desc { font-size:.78rem; color:var(--paper-dim); margin-top:10px; min-height:36px; line-height:1.5; }
+
+  @media (max-width:560px){
+    .stage { padding:20px 12px 48px; }
+    .hero { margin-bottom:22px; }
+    .hero .seal-top { width:60px; height:60px; font-size:2rem; margin-bottom:12px; }
+    .hero h1.zh { font-size:2.1rem; }
+    .wl-grid { grid-template-columns:1fr; gap:11px; }
+    .wl { padding:14px; }
+    .cst-box { grid-template-columns:1fr; gap:12px; }
+    .cls-row { grid-template-columns:repeat(3,1fr); }
+    .startbar { flex-direction:column; align-items:stretch; gap:11px; margin-top:22px; }
+    .startbar .hint { text-align:center; }
+    #btnStart { width:100%; padding:16px; min-height:52px; }
+  }
+</style>
+</head>
+<body class="grain">
+<div class="stage">
+  <div class="hero">
+    <div class="seal-top zh">漢</div>
+    <h1 class="zh">群雄逐鹿</h1>
+    <div class="romaji">Three Kingdoms · Heroes Contend</div>
+    <div class="tag">มหาสงครามขุนศึก · ศักราช <b>ค.ศ. 190</b> — ราชวงศ์ฮั่นล่มสลาย แผ่นดินแตกเป็นเสี่ยง</div>
+  </div>
+
+  <div class="panel">
+    <div class="sec-label">เลือกก๊กที่จะสวมบทบาท</div>
+    <div class="wl-grid" id="wlGrid"></div>
+
+    <div class="custom" id="customBox">
+      <div class="sec-label">ปรับแต่งขุนศึกนิรนาม (สร้างเอง)</div>
+      <div class="cst-box">
+        <div class="field"><label>นามผู้นำ</label><input type="text" id="cName" value="ขุนศึกนิรนาม"></div>
+        <div class="field"><label>นามก๊ก</label><input type="text" id="cFaction" value="คณะกู้ชาติฮั่น"></div>
+        <div class="field"><label>ชัยภูมิเริ่มต้น</label>
+          <select id="cSpawn">
+            <option value="P11">漢中 ฮันต๋ง — ป้องกันเหนียวแน่น</option>
+            <option value="P13">西涼 ซีเหลียง — แหล่งม้าศึกชั้นยอด</option>
+            <option value="P16">北海 ปักไฮ — การค้ามั่งคั่ง</option>
+            <option value="P20">長沙 ฉางซา — อู่ข้าวแดนใต้</option>
+            <option value="P05">成都 เฉิงตู — ชัยภูมิเสฉวน</option>
+          </select>
+        </div>
+        <div class="field"><label>สีธงประจำก๊ก</label><input type="color" id="cColor" value="#c9a24a"></div>
+      </div>
+      <div class="field" style="margin-top:14px"><label>เลือกธาตุประจำตัว (5 ธาตุขุนพล)</label>
+        <div class="cls-row" id="clsRow"></div>
+        <div class="cls-desc" id="clsDesc"></div>
+      </div>
+      <div class="stat-pool">
+        <div class="stat-row" style="border:0"><b>แต้มคงเหลือจัดสรร: <span class="pool-tag" id="pool">20</span></b></div>
+        <div class="stat-row"><span>⚔️ การทหาร (武)</span><div class="stat-ctl"><button onclick="adj('war',-5)" id="war-">−</button><span class="stat-val" id="war">70</span><button onclick="adj('war',5)" id="war+">+</button></div></div>
+        <div class="stat-row"><span>📚 สติปัญญา (智)</span><div class="stat-ctl"><button onclick="adj('int',-5)" id="int-">−</button><span class="stat-val" id="int">70</span><button onclick="adj('int',5)" id="int+">+</button></div></div>
+        <div class="stat-row"><span>🏛️ การเมือง (政)</span><div class="stat-ctl"><button onclick="adj('pol',-5)" id="pol-">−</button><span class="stat-val" id="pol">70</span><button onclick="adj('pol',5)" id="pol+">+</button></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="startbar">
+    <div class="hint" id="hint">เลือกก๊กที่ท่านต้องการ แล้วกรีฑาทัพเข้าสู่แผ่นดินสามก๊ก</div>
+    <button class="btn btn-primary" id="btnStart" onclick="startGame()">⚔️ กรีฑาทัพ</button>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script>
+const WARLORDS = [
+  { id:'cao_cao',  diff:'★★☆ ปานกลาง', desc:'ยอดทรชนผู้ปรีชา เก่งทั้งทหารและการคลัง มีขุนพลและกุนซือล้นหลาม' },
+  { id:'liu_bei',  diff:'★★★ ยาก',     desc:'ผู้นำเปี่ยมคุณธรรม ซื้อใจราษฎรเก่ง มีสามทหารเสือพลีชีพให้ แต่เริ่มต้นเล็ก' },
+  { id:'sun_jian', diff:'★★☆ ปานกลาง', desc:'พยัคฆ์แห่งกังตั๋ง เชี่ยวชาญยุทธนาวี กองทัพบุกทะลวงดุดัน' },
+  { id:'yuan_shao',diff:'★☆☆ ง่าย',     desc:'ตระกูลใหญ่ทรงอิทธิพลภาคเหนือ เริ่มเกมด้วยเสบียงและทองมหาศาล' },
+  { id:'dong_zhuo',diff:'★★★ ยาก',     desc:'ทรชนกุมฮ่องเต้ มีลิโป้สุดยอดนักรบ แต่ถูกทุกก๊กชิงชัง' },
+  { id:'ma_teng',  diff:'★★☆ ปานกลาง', desc:'ขุนศึกชายแดนตะวันตก กองทหารม้าเหล็กซีเหลียงเลื่องชื่อ' },
+  { id:'gongsun',  diff:'★★★ ยาก',     desc:'ขุนพลแดนเหนือ ทหารม้าขาวเกรียงไกร แต่โดดเดี่ยวห่างไกล' },
+  { id:'liu_biao', diff:'★★☆ ปานกลาง', desc:'เจ้าแคว้นเกงจิ๋วผู้มั่งคั่ง ดินแดนกว้างใหญ่อุดมสมบูรณ์' },
+  { id:'yuan_shu', diff:'★★☆ ปานกลาง', desc:'ตระกูลอ้วนสายใต้ ทะเยอทะยานใฝ่สถาปนาตนเป็นฮ่องเต้' },
+  { id:'liu_zhang',diff:'★★☆ ปานกลาง', desc:'ตระกูลเล่าแห่งเสฉวน เล่าเอี๋ยนปลีกเอ๊กจิ๋วตั้งตนอิสระ ชัยภูมิป้องกันแน่นหนา แต่ทายาทอ่อนแอ' },
+  { id:'tao_qian', diff:'★★★ ยาก',     desc:'เจ้าชีจิ๋วผู้สูงวัย ดินแดนมั่งคั่งพลเมืองหนาแน่น ทว่าตกเป็นเป้าแค้นของโจโฉในไม่ช้า' },
+  { id:'han_fu',   diff:'★★★ ยากมาก',   desc:'เจ้ามณฑลกิจิ๋ว คลังเสบียงล้นเหลือแต่กำลังรบอ่อนแอ ถูกอ้วนเสี้ยวจ้องชิงตั้งแต่ต้นเกม' },
+  { id:'shi_xie',  diff:'★★☆ ปานกลาง', desc:'ตระกูลสื้อแห่งเจียวจิ๋ว เจ้าสมุทรทักษิณ มั่งคั่งจากการค้าทางทะเล ปลอดภัยไกลศึกกลางแต่ขยายอำนาจยาก' },
+  { id:'liu_chong',diff:'★★★ ยากมาก',   desc:'ตันอ๋องเชื้อพระวงศ์ฮั่น พลธนูหน้าไม้ฝีมือเยี่ยม ต้านโพกผ้าเหลืองไว้ได้ แต่โดดเดี่ยวกลางที่ราบ ถูกอ้วนสุดจ้องชิง' },
+  { id:'custom',   diff:'⚙️ กำหนดเอง', desc:'ย้อนเวลากลับมาเปลี่ยนประวัติศาสตร์ด้วยตัวท่านเอง ปรับธาตุ จุดเกิด และสเตตัสได้อิสระ' }
+];
+let selected='cao_cao';
+let customCls='commander';
+const base={war:70,int:70,pol:70}; let stats={...base}; let pool=20;
+
+function elClassOf(factionKey){
+  // representative element of the faction's lord
+  const lord=GENERAL_ROSTER.find(g=>g.faction===factionKey&&g.lord);
+  return lord?HERO_CLASSES[lord.cls]:HERO_CLASSES.commander;
+}
+
+function renderWarlords(){
+  const grid=document.getElementById('wlGrid'); grid.innerHTML='';
+  WARLORDS.forEach(w=>{
+    const isCustom=w.id==='custom';
+    const f=isCustom?{zh:'創',th:'นิรนาม',leader:'สร้างขุนศึกเอง',color:'#c9a24a',capital:'-'}:FACTIONS[w.id];
+    const c=isCustom?HERO_CLASSES.commander:elClassOf(w.id);
+    const capName=isCustom?'เลือกชัยภูมิได้อิสระ':provName(f.capital);
+    const st = (!isCustom && typeof FACTION_START!=='undefined') ? FACTION_START[w.id] : null;
+    let regionHtml='';
+    if(st){
+      const R=REGIONS[st.region]||{zh:'',th:''};
+      const cityNames = st.cities.map(k=>`${provZh(k)} ${provName(k)}`).join(' · ');
+      regionHtml = `<div class="wl-region"><span class="wl-rg">${R.zh} <span class="wl-rgth">${R.th}</span></span><span class="wl-cnt">${st.cities.length} เมือง</span></div>
+        <div class="wl-cities">🏯 ${cityNames}</div>`;
+    }
+    const el=document.createElement('div');
+    el.className='wl'+(w.id===selected?' sel':''); el.style.setProperty('--fc',f.color);
+    el.innerHTML=`
+      <div class="wl-top">
+        <div class="wl-crest">${f.zh}</div>
+        <div><div class="wl-name">${isCustom?'<b>ขุนศึกนิรนาม</b>':f.leader.split(' ')[0]+' <b>'+(f.leader.split(' ')[1]||'')+'</b>'}</div>
+        <div class="wl-cap">📍 ${capName}</div></div>
+      </div>
+      <div class="wl-desc">${w.desc}</div>
+      ${regionHtml}
+      <div class="wl-meta"><span class="wl-diff">${w.diff}</span><span class="wl-el ${c.cls}"><span class="el-pill ${c.cls}"><span class="el-dot"></span>${c.el} ${c.th}</span></span></div>`;
+    el.onclick=()=>{ selected=w.id; renderWarlords(); document.getElementById('customBox').classList.toggle('on',w.id==='custom');
+      document.getElementById('hint').textContent = w.id==='custom'?'ปรับแต่งขุนศึกของท่านด้านล่าง':'ก๊กที่เลือก: '+(FACTIONS[w.id]?FACTIONS[w.id].th:''); };
+    grid.appendChild(el);
+  });
+}
+function renderClasses(){
+  const row=document.getElementById('clsRow'); row.innerHTML='';
+  Object.entries(HERO_CLASSES).forEach(([k,c])=>{
+    const o=document.createElement('div'); o.className='cls-opt'+(k===customCls?' sel':''); o.style.setProperty('--ec',c.color);
+    o.innerHTML=`<div class="zh">${c.zh}</div><div class="cn">${c.th}</div><div class="el">${c.el}</div>`;
+    o.onclick=()=>{ customCls=k; renderClasses(); document.getElementById('clsDesc').textContent=c.desc; };
+    row.appendChild(o);
+  });
+  document.getElementById('clsDesc').textContent=HERO_CLASSES[customCls].desc;
+}
+function adj(s,d){
+  if(d>0 && pool>=5){ stats[s]+=5; pool-=5; }
+  else if(d<0 && stats[s]>base[s]){ stats[s]-=5; pool+=5; }
+  updateStats();
+}
+function updateStats(){
+  document.getElementById('pool').textContent=pool;
+  ['war','int','pol'].forEach(s=>{ document.getElementById(s).textContent=stats[s];
+    document.getElementById(s+'+').disabled=pool<5; document.getElementById(s+'-').disabled=stats[s]<=base[s]; });
+}
+function startGame(){
+  let setup;
+  if(selected==='custom'){
+    setup={ warlord:'custom', playerName:document.getElementById('cName').value.trim()||'ขุนศึกนิรนาม',
+      factionName:document.getElementById('cFaction').value.trim()||'คณะกู้ชาติ',
+      color:document.getElementById('cColor').value, spawn:document.getElementById('cSpawn').value,
+      cls:customCls, war:stats.war, int:stats.int, pol:stats.pol };
+  } else {
+    const f=FACTIONS[selected];
+    setup={ warlord:selected, playerName:f.leader.split(' ')[1]||f.th, factionName:'ก๊ก'+f.th, color:f.color };
+  }
+  localStorage.removeItem('TG3_SAVE');
+  localStorage.setItem('TG3_SETUP', JSON.stringify(setup));
+  location.href='game.html';
+}
+renderWarlords(); renderClasses(); updateStats();
+</script>
+</body>
+</html>

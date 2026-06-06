@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三國志 · แผนที่ยุทธศาสตร์ขุนศึก 190 (ทรงแผนที่จีนโบราณ)</title>
+<style>
+/* ===== CSS คุมธีมบอร์ดเกมกลยุทธ์โบราณ ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --parchment:       #F5E6C8;
+  --parchment-dark:  #E8D5A3;
+  --parchment-shadow:#C8A96E;
+  --dark-brown:      #2F1B0E;
+  --saddle:          #8B4513;
+  --ink:             #3A2010;
+  --gold:            #C8952A;
+  --gold-light:      #F0C040;
+  --crimson:         #8b0000;
+  
+  --color-cao:       #2b4c7e;
+  --color-liu:       #2e5a36;
+  --color-sun:       #a34343;
+  --color-yuan:      #bda038;
+  --color-neutral:   #7f8c8d;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  font-family: 'Segoe UI', Sarabun, sans-serif;
+  background-color: #0c0805; color: var(--ink);
+  overflow: hidden;
+}
+
+.game-wrapper { display: flex; width: 100%; height: 100%; background-color: #120c08; }
+.map-area { flex: 1; height: 100%; overflow: auto; padding: 20px; display: flex; justify-content: center; align-items: center; position: relative; }
+
+/* 📜 แผงควบคุมสั่งการด้านขวา */
+.side-panel {
+  width: 360px; height: 100%; background-color: var(--parchment);
+  border-left: 3px double var(--saddle);
+  box-shadow: -5px 0 20px rgba(0,0,0,0.5), inset 5px 0 15px var(--parchment-shadow);
+  display: flex; flex-direction: column; z-index: 10;
+}
+
+.panel-header { padding: 16px; background-color: var(--ink); color: var(--gold); text-align: center; border-bottom: 2px solid var(--gold); }
+.panel-header h2 { font-size: 1.3rem; letter-spacing: 1px; margin-bottom: 2px; }
+.panel-header .faction-tag { font-size: 0.85rem; color: var(--parchment); }
+
+.panel-stats { display: grid; grid-template-columns: 1fr 1fr; background-color: var(--saddle); gap: 1px; border-bottom: 1px solid var(--saddle); }
+.stat-item { background-color: var(--parchment-dark); padding: 8px; text-align: center; }
+.stat-lbl { font-size: 0.7rem; color: var(--dark-brown); font-weight: bold; }
+.stat-val { font-size: 1.1rem; font-weight: bold; color: var(--ink); }
+
+.panel-content { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+.section-box { background: rgba(0,0,0,0.03); border: 1px dashed var(--saddle); border-radius: 4px; padding: 12px; }
+.section-title { font-size: 0.85rem; color: var(--saddle); font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid rgba(139,69,19,0.15); padding-bottom: 3px; }
+.info-row { display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 5px; }
+.info-row span:first-child { color: var(--dark-brown); }
+.info-row span:last-child { font-weight: bold; }
+
+.btn-action {
+  width: 100%; padding: 9px; background-color: var(--parchment); border: 1px solid var(--saddle);
+  border-radius: 4px; color: var(--ink); font-weight: bold; font-size: 0.88rem; cursor: pointer; margin-bottom: 6px; text-align: left;
+}
+.btn-action:hover:not(:disabled) { background-color: var(--ink); color: var(--gold); border-color: var(--ink); }
+.btn-action:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-action small { display: block; font-size: 0.68rem; font-weight: normal; opacity: 0.8; }
+
+.btn-turn { width: 100%; padding: 12px; background-color: var(--crimson); color: white; border: 2px solid var(--gold); border-radius: 4px; font-size: 1.05rem; font-weight: bold; cursor: pointer; letter-spacing: 1px; }
+.btn-turn:hover { background-color: #a00000; color: var(--gold-light); }
+
+/* 🗺️ โครงสร้างกระดานแผนที่จัดช่องสัดส่วนแน่นอน */
+.map-container { position: relative; background-color: var(--parchment-dark); border: 4px double var(--saddle); padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+.grid-map { 
+  display: grid; 
+  grid-template-columns: repeat(9, 110px); /* ขยายความกว้างกล่อง */
+  grid-auto-rows: 110px;                   /* ขยายความสูงกล่อง */
+  gap: 10px;                               /* ปรับระยะห่างระหว่างกล่องให้กว้างขึ้นเล็กน้อย */
+}
+
+/* บล็อกเมืองพื้นฐานและขนาดต่างๆ */
+.tile { background-color: rgba(139,69,19,0.03); border: 1px dashed rgba(139,69,19,0.15); border-radius: 4px; }
+.tile.province { background-color: var(--parchment); border: 2px solid var(--saddle); cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 4px; text-align: center; }
+.tile.province:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(139,69,19,0.35); z-index: 5; }
+.tile.province.active { border-color: var(--gold-light) !important; box-shadow: 0 0 15px var(--gold) !important; transform: scale(1.02); z-index: 6; }
+
+/* 🏛️ คลาสแบ่งระดับขนาดเมืองคุมการคลุมพื้นที่ในตาราง Grid */
+.size-large { grid-column: span 2; grid-row: span 2; background-color: #fffaf0; }
+.size-medium { grid-column: span 2; grid-row: span 1; }
+.size-small { grid-column: span 1; grid-row: span 1; }
+
+/* --- สไตล์สำหรับช่องภูมิประเทศ --- */
+.tile-terrain {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+  pointer-events: none; /* เพื่อไม่ให้ขวางการคลิกเลือกเมือง (ถ้าช่องซ้อนกัน) */
+  z-index: 1;
+}
+
+/* แม่น้ำสีฟ้าอ่อน/น้ำเงิน */
+.tile-terrain.river {
+  background-color: #e3f2fd;
+  border: 1px dashed #90caf9;
+  color: #1e88e5;
+}
+
+/* ภูเขาสีน้ำตาล/เขียวหม่น */
+.tile-terrain.mountain {
+  background-color: #efebe9;
+  border: 1px solid #bcaaa4;
+  color: #6d4c41;
+  background-image: linear-gradient(135deg, #efebe9 25%, #d7ccc8 100%);
+}
+
+.tile.attack-target { animation: attP 1.2s infinite; cursor: crosshair; }
+@keyframes attP { 0%,100%{box-shadow:0 0 2px red;} 50%{box-shadow:0 0 12px red; border-color:red;} }
+.tile.transfer-target { animation: transP 1.2s infinite; }
+@keyframes transP { 0%,100%{box-shadow:0 0 2px green;} 50%{box-shadow:0 0 12px green; border-color:green;} }
+
+.tile-name-zh { font-size: 1.15rem; font-weight: bold; line-height: 1.1; }
+.size-large .tile-name-zh { font-size: 1.5rem; color: var(--crimson); }
+.tile-name-th { font-size: 0.72rem; color: #444; font-weight: bold; }
+.size-large .tile-name-th { font-size: 0.88rem; }
+
+.tile-troops { font-size: 0.68rem; margin-top: 3px; background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 2px; font-weight: bold; }
+.tile-general { font-size: 0.65rem; color: var(--crimson); font-weight: bold; margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 100%; }
+.size-large .tile-general { font-size: 0.75rem; background: rgba(139,0,0,0.05); padding: 1px 5px; border-radius: 3px; }
+
+.log-container { height: 110px; background: rgba(0,0,0,0.04); border: 1px solid var(--saddle); padding: 6px; overflow-y: auto; font-size: 0.72rem; line-height: 1.4; }
+.log-entry { margin-bottom: 3px; border-bottom: 1px solid rgba(0,0,0,0.01); }
+
+/* Modal จัดการขุนพล */
+.modal-overlay {
+  position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.75);
+  display: flex; justify-content: center; align-items: center; z-index: 100;
+  visibility: hidden; opacity: 0; transition: all 0.3s ease;
+}
+.modal-overlay.show { visibility: visible; opacity: 1; }
+.capture-box {
+  background: var(--parchment); border: 3px double var(--crimson); padding: 25px; width: 420px;
+  text-align: center; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+}
+.capture-title { font-size: 1.4rem; font-weight: bold; color: var(--crimson); margin-bottom: 10px; }
+.capture-body { font-size: 0.95rem; color: var(--ink); margin-bottom: 20px; line-height: 1.5; background: rgba(0,0,0,0.03); padding: 12px; border: 1px dashed var(--saddle); }
+.modal-btn-group { display: flex; gap: 10px; }
+.btn-modal { flex: 1; padding: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; border: 1px solid var(--saddle); font-size: 0.95rem; }
+.btn-modal.recruit { background-color: #2e5a36; color: white; }
+.btn-modal.recruit:hover { background-color: #224428; }
+.btn-modal.execute { background-color: var(--crimson); color: white; }
+.btn-modal.execute:hover { background-color: #600000; }
+</style>
+</head>
+<body>
+
+<div class="game-wrapper">
+  <div class="map-area">
+    <div class="map-container">
+      <div id="gridMap" class="grid-map"></div>
+    </div>
+  </div>
+
+  <div class="side-panel">
+    <div class="panel-header">
+      <h2 id="uiFactionName">กองกำลังขุนศึก</h2>
+      <div class="faction-tag">👑 ท่านขุนศึก: <span id="uiPlayerName">--</span></div>
+    </div>
+    <div class="panel-stats">
+      <div class="stat-item"><div class="stat-lbl">📅 ปี ค.ศ.</div><div class="stat-val" id="uiYear">190</div></div>
+      <div class="stat-item"><div class="stat-lbl">💰 ทองคลังหลวง</div><div class="stat-val" id="uiWealth">100</div></div>
+    </div>
+    <div class="panel-content">
+      <div class="section-box">
+        <div class="section-title">📍 รายละเอียดดินแดนยุทธศาสตร์</div>
+        <div id="panelDetail">
+          <div style="text-align:center; font-style:italic; font-size:0.85rem; padding:10px 0;">คลิกเลือกมณฑลบนแผนที่เพื่อเริ่มบัญชาการ</div>
+        </div>
+      </div>
+      <div class="section-box" style="flex:1; display:flex; flex-direction:column;">
+        <div class="section-title">📜 บันทึกพงศาวดารศึก 190</div>
+        <div id="logContainer" class="log-container" style="flex:1;"></div>
+      </div>
+      <button class="btn-turn" onclick="endTurn()">⛺ ผ่านสิ้นสุดเทิร์น</button>
+    </div>
+  </div>
+</div>
+
+<div id="captureModal" class="modal-overlay">
+  <div class="capture-box">
+    <div class="capture-title">⚔️ จับกุมตัวขุนศึกข้าศึกได้!</div>
+    <div id="captureBody" class="capture-body">ท่านได้จับตัวขุนพลสำเร็จแล้ว จะจัดการอย่างไรกับชีวิตเขาดี?</div>
+    <div class="modal-btn-group">
+      <button class="btn-modal recruit" onclick="resolveCapture('recruit')">🤝 เกลี้ยกล่อมเข้าพวก</button>
+      <button class="btn-modal execute" onclick="resolveCapture('execute')">🪓 สั่งประหารชีวิต</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// 🗺️ จัดระเบียบพิกัด (r, c) ใหม่ทั่งแผงอย่างเคร่งครัด ล็อกช่องว่างไม่ให้เบียดกันจนเสียรูปแผนที่จีน
+const PROVINCES = {
+  // ==========================================
+  // แถบที่ 1-3: ภาคเหนือ / แดนซานซี-เหลียวตง / ซีเหลียงตะวันตก (18 เมือง)
+  // ==========================================
+  'P13': { name: '西涼 ซีเหลียง', size: 'medium', r: 1, c: 1, baseWealth: 25, baseTroops: 35, def: 55 },
+  'P26': { name: '金城 กิมเสีย', size: 'small',  r: 1, c: 3, baseWealth: 20, baseTroops: 20, def: 50 },
+  'P14': { name: '晉陽 จินหยาง', size: 'small',  r: 1, c: 4, baseWealth: 25, baseTroops: 25, def: 55 },
+  'P15': { name: '薊縣 จี้เสี้ยน', size: 'medium', r: 1, c: 6, baseWealth: 30, baseTroops: 25, def: 50 },
+  'P09': { name: '北平 ปักเป๋ง', size: 'small',  r: 1, c: 8, baseWealth: 30, baseTroops: 35, def: 50 },
+  'P25': { name: '襄平 เซียงเพิง', size: 'small', r: 1, c: 10, baseWealth: 25, baseTroops: 25, def: 55 },
+  
+  'P28': { name: '武威 อู่เวย์', size: 'small',  r: 2, c: 1, baseWealth: 22, baseTroops: 20, def: 45 },
+  'P29': { name: '張掖 จางเย่', size: 'small',  r: 2, c: 2, baseWealth: 20, baseTroops: 18, def: 45 },
+  'P08': { name: '鄴城 เย่เฉิง', size: 'large',   r: 2, c: 4, baseWealth: 55, baseTroops: 55, def: 70 },
+  'P16': { name: '北海 ปักไฮ', size: 'medium',  r: 2, c: 7, baseWealth: 35, baseTroops: 25, def: 45 },
+  'P30': { name: '代郡 ไต้กุ๋น', size: 'small',  r: 2, c: 6, baseWealth: 24, baseTroops: 22, def: 50 },
+  'P31': { name: '遼東 เหลียวตง', size: 'small', r: 2, c: 9, baseWealth: 26, baseTroops: 30, def: 60 },
+
+  'P32': { name: '安定 อันเต็ง', size: 'small',  r: 3, c: 2, baseWealth: 22, baseTroops: 20, def: 50 },
+  'P33': { name: '上郡 ซ่างกุ๋น', size: 'small',  r: 3, c: 4, baseWealth: 20, baseTroops: 20, def: 45 },
+  'P34': { name: '平陽 ผิงหยาง', size: 'small', r: 3, c: 5, baseWealth: 28, baseTroops: 24, def: 50 },
+  'P35': { name: '信都 สินตู', size: 'small',   r: 3, c: 6, baseWealth: 30, baseTroops: 25, def: 45 },
+  'P36': { name: '南皮 น่ำพี้', size: 'medium',  r: 3, c: 8, baseWealth: 40, baseTroops: 35, def: 55 },
+  'P37': { name: '平原 ผิงหยวน', size: 'small', r: 3, c: 9, baseWealth: 32, baseTroops: 25, def: 45 },
+
+  // ==========================================
+  // แถบที่ 4-6: ภาคกลาง / แกนจงหยวน-ราชธานี / ซานตง-สวีจิ๋ว (20 เมือง)
+  // ==========================================
+  'P12': { name: '天水 เทียนสุ่ย', size: 'small', r: 4, c: 1, baseWealth: 25, baseTroops: 25, def: 55 },
+  'P02': { name: '長安 เตียงอัน', size: 'large',   r: 4, c: 2, baseWealth: 50, baseTroops: 60, def: 80 },
+  'P01': { name: '洛陽 ลกเอี๋ยง', size: 'large',   r: 4, c: 4, baseWealth: 60, baseTroops: 70, def: 85 },
+  'P17': { name: '濮陽 พกเอี๋ยง', size: 'small',  r: 4, c: 7, baseWealth: 35, baseTroops: 30, def: 50 },
+  'P38': { name: '臨淄 หลินจือ', size: 'medium', r: 4, c: 9, baseWealth: 42, baseTroops: 35, def: 55 },
+  'P39': { name: '琅邪 ลังเย่', size: 'small',   r: 4, c: 10, baseWealth: 30, baseTroops: 22, def: 45 },
+
+  'P40': { name: '陳郡 เฉินกุ๋น', size: 'small',  r: 5, c: 4, baseWealth: 32, baseTroops: 25, def: 45 },
+  'P23': { name: '陳留 ตันลิ่ว', size: 'medium',  r: 5, c: 5, baseWealth: 40, baseTroops: 35, def: 50 },
+  'P03': { name: '許昌 ฮูโต๋', size: 'medium',  r: 5, c: 6, baseWealth: 45, baseTroops: 45, def: 65 }, 
+  'P07': { name: '下邳 แห้ฝือ', size: 'medium',  r: 5, c: 8, baseWealth: 35, baseTroops: 35, def: 50 },
+  'P41': { name: '彭城 เผิงเฉิง', size: 'small',  r: 5, c: 9, baseWealth: 36, baseTroops: 28, def: 50 },
+  'P42': { name: '東海 ตงไห่', size: 'small',   r: 5, c: 10, baseWealth: 34, baseTroops: 24, def: 45 },
+
+  'P11': { name: '漢中 ฮันต๋ง', size: 'medium',  r: 6, c: 2, baseWealth: 35, baseTroops: 30, def: 65 },
+  'P43': { name: '上庸 ซ่างยง', size: 'small',   r: 6, c: 3, baseWealth: 24, baseTroops: 18, def: 50 },
+  'P24': { name: '新野 ซินเอี๋ย', size: 'small',  r: 6, c: 5, baseWealth: 20, baseTroops: 15, def: 40 },
+  'P18': { name: '宛城 อ้วนเซีย', size: 'small',  r: 6, c: 6, baseWealth: 30, baseTroops: 25, def: 45 },
+  'P44': { name: '汝南 ยื่อหนาน', size: 'medium', r: 6, c: 7, baseWealth: 38, baseTroops: 30, def: 50 },
+  'P45': { name: '譙郡 โ譙กุ๋น', size: 'small',   r: 6, c: 8, baseWealth: 35, baseTroops: 25, def: 45 },
+  'P46': { name: '廣陵 กวางหลิง', size: 'small', r: 6, c: 10, baseWealth: 32, baseTroops: 26, def: 45 },
+  'P47': { name: 'สือเต๋อ 💡', size: 'small',    r: 6, c: 11, baseWealth: 25, baseTroops: 20, def: 40 },
+
+  // ==========================================
+  // แถบที่ 7-9: ภาคกลางตอนล่าง / เสฉวนเหนือ / ท่าเรือเกงจิ๋วเหนือ-โซ่วชุน (18 เมือง)
+  // ==========================================
+  'P48': { name: '梓潼 จื่อถง', size: 'small',   r: 7, c: 1, baseWealth: 28, baseTroops: 22, def: 55 },
+  'P49': { name: '巴西 ปาซี', size: 'small',     r: 7, c: 2, baseWealth: 26, baseTroops: 20, def: 50 },
+  'P06': { name: '襄陽 เซียงหยาง', size: 'large', r: 7, c: 4, baseWealth: 45, baseTroops: 40, def: 60 },
+  'P50': { name: '樊城 ฟานเฉิง', size: 'small',   r: 7, c: 5, baseWealth: 30, baseTroops: 25, def: 55 },
+  'P10': { name: '壽春 โซ่วชุน', size: 'medium', r: 7, c: 7, baseWealth: 40, baseTroops: 35, def: 55 },
+  'P51': { name: '廬江 หลูเจียง', size: 'small',  r: 7, c: 8, baseWealth: 34, baseTroops: 25, def: 45 },
+
+  'P05': { name: '成都 เฉิงตู', size: 'large',   r: 8, c: 1, baseWealth: 50, baseTroops: 45, def: 75 },
+  'P27': { name: '巴郡 ปากุ๋น', size: 'small',   r: 8, c: 2, baseWealth: 30, baseTroops: 20, def: 55 },
+  'P52': { name: '江夏 กังแฮ', size: 'medium',  r: 8, c: 5, baseWealth: 36, baseTroops: 30, def: 50 },
+  'P53': { name: '濡須 ยวี๋ซี', size: 'small',   r: 8, c: 7, baseWealth: 28, baseTroops: 24, def: 60 },
+  'P04': { name: '建業 เกี๋ยนเงียบ', size: 'large', r: 8, c: 8, baseWealth: 50, baseTroops: 50, def: 70 },
+  'P54': { name: '吳興 อู๋ซิง', size: 'small',   r: 8, c: 10, baseWealth: 30, baseTroops: 22, def: 45 },
+
+  'P55': { name: '犍為 เจียนเวย์', size: 'small', r: 9, c: 1, baseWealth: 24, baseTroops: 18, def: 45 },
+  'P56': { name: '永安 หย่งอัน', size: 'small',   r: 9, c: 3, baseWealth: 28, baseTroops: 25, def: 60 },
+  'P19': { name: '江陵 กังเหลง', size: 'medium', r: 9, c: 4, baseWealth: 35, baseTroops: 30, def: 50 },
+  'P22': { name: '柴桑 ชายซาง', size: 'small',  r: 9, c: 6, baseWealth: 30, baseTroops: 25, def: 45 },
+  'P21': { name: '吳郡 อู๋จวิ้น', size: 'medium',  r: 9, c: 9, baseWealth: 35, baseTroops: 30, def: 45 },
+  'P57': { name: '會稽 ห้อยเข', size: 'medium', r: 9, c: 10, baseWealth: 38, baseTroops: 28, def: 50 },
+
+  // ==========================================
+  // แถบที่ 10-13: ภาคใต้ลึก / เสฉวนใต้ / เกงจิ๋วใต้ / น่ำมัน / เจียวจิ๋ว (17 เมือง)
+  // ==========================================
+  'P58': { name: '越巂 เย่ว์ซี', size: 'small',   r: 10, c: 1, baseWealth: 18, baseTroops: 15, def: 45 },
+  'P59': { name: '牂牁 ซางกอ', size: 'small',   r: 10, c: 2, baseWealth: 16, baseTroops: 14, def: 40 },
+  'P60': { name: '武陵 บูเหลง', size: 'small',   r: 10, c: 4, baseWealth: 26, baseTroops: 20, def: 45 },
+  'P20': { name: '長沙 ฉางซา', size: 'medium',  r: 10, c: 5, baseWealth: 35, baseTroops: 25, def: 45 },
+  'P61': { name: '豫章 ยี่เจียง', size: 'medium', r: 10, c: 7, baseWealth: 32, baseTroops: 24, def: 45 },
+  'P62': { name: '丹陽 ตันหยาง', size: 'small',  r: 10, c: 8, baseWealth: 30, baseTroops: 22, def: 45 },
+
+  'P63': { name: '建寧 เจี้ยนหนิง', size: 'small', r: 11, c: 1, baseWealth: 20, baseTroops: 18, def: 50 },
+  'P64': { name: '零陵 เลงเหลง', size: 'small',  r: 11, c: 4, baseWealth: 25, baseTroops: 20, def: 45 },
+  'P65': { name: '桂陽 กุ้ยหยาง', size: 'small',  r: 11, c: 5, baseWealth: 24, baseTroops: 18, def: 45 },
+  'P66': { name: '廬陵 หลูหลิง', size: 'small',  r: 11, c: 7, baseWealth: 22, baseTroops: 16, def: 40 },
+  'P67': { name: '臨賀 หลินเฮ่อ', size: 'small',  r: 11, c: 8, baseWealth: 20, baseTroops: 15, def: 40 },
+
+  'P65_2': { name: '永昌 หย่งชาง', size: 'small',r: 12, c: 1, baseWealth: 15, baseTroops: 15, def: 55 }, // ดินแดนเบญจพรรณน่ำมัน
+  'P68': { name: '交趾 เจียวจื่อ', size: 'small',  r: 12, c: 3, baseWealth: 25, baseTroops: 20, def: 50 }, // ดินแดนเจียวจิ๋ว (เวียดนามเหนือโบราณ)
+  'P69': { name: '合浦 เหอผู่', size: 'small',   r: 12, c: 5, baseWealth: 20, baseTroops: 15, def: 40 },
+  'P70': { name: '南海 นำไฮ', size: 'small',    r: 12, c: 7, baseWealth: 26, baseTroops: 18, def: 45 },
+  'P71': { name: '建安 เจี้ยนอัน', size: 'small', r: 12, c: 9, baseWealth: 22, baseTroops: 16, def: 45 },
+
+  'P72': { name: '九真 จิ่วเจิน', size: 'small',  r: 13, c: 3, baseWealth: 15, baseTroops: 12, def: 40 },
+  'P73': { name: '日南 ยื่อหนานใต้', size: 'small', r: 13, c: 4, baseWealth: 12, baseTroops: 10, def: 40 }
+};
+// 🔗 เส้นทางเดินทัพเชื่อมต่อมณฑลและเมืองยุทธศาสตร์ย่อย (ชุดสมบูรณ์ 73 เมือง)
+const ADJACENCY = {
+  // --- ภาคเหนือ / แดนซานซี-เหลียวตง / ซีเหลียงตะวันตก ---
+  'P13': ['P12', 'P26', 'P28'],
+  'P26': ['P13', 'P28', 'P29'],
+  'P14': ['P01', 'P02', 'P08', 'P30', 'P33', 'P34'],
+  'P15': ['P08', 'P09', 'P30', 'P35', 'P36'],
+  'P09': ['P15', 'P16', 'P25', 'P31', 'P36', 'P37'],
+  'P25': ['P09', 'P31'],
+  'P28': ['P13', 'P26', 'P29', 'P32'],
+  'P29': ['P26', 'P28', 'P32'],
+  'P08': ['P14', 'P15', 'P17', 'P23', 'P34', 'P35'],
+  'P16': ['P07', 'P09', 'P17', 'P37', 'P38'],
+  'P30': ['P14', 'P15'],
+  'P31': ['P09', 'P25'],
+  'P32': ['P28', 'P29', 'P12', 'P02', 'P33'],
+  'P33': ['P32', 'P14', 'P02', 'P34'],
+  'P34': ['P33', 'P14', 'P08', 'P35', 'P01'],
+  'P35': ['P34', 'P08', 'P15', 'P36'],
+  'P36': ['P35', 'P15', 'P09', 'P37'],
+  'P37': ['P36', 'P09', 'P16', 'P17', 'P38'],
+
+  // --- ภาคกลาง / แกนจงหยวน-ราชธานี / ซานตง-สวีจิ๋ว ---
+  'P12': ['P02', 'P13', 'P32'],
+  'P02': ['P01', 'P11', 'P12', 'P14', 'P24', 'P32', 'P33'],
+  'P01': ['P02', 'P03', 'P06', 'P08', 'P14', 'P18', 'P23', 'P34', 'P40'],
+  'P17': ['P03', 'P07', 'P08', 'P16', 'P23', 'P37', 'P38', 'P45'],
+  'P38': ['P16', 'P37', 'P17', 'P39', 'P41'],
+  'P39': ['P38', 'P09', 'P07', 'P42'],
+  'P40': ['P01', 'P23', 'P03', 'P18', 'P24', 'P44'],
+  'P23': ['P01', 'P03', 'P08', 'P17', 'P40', 'P45'],
+  'P03': ['P01', 'P06', 'P07', 'P10', 'P17', 'P18', 'P23', 'P40', 'P44', 'P45'],
+  'P07': ['P03', 'P10', 'P16', 'P17', 'P39', 'P41', 'P42', 'P46'],
+  'P41': ['P07', 'P38', 'P42', 'P45', 'P46'],
+  'P42': ['P39', 'P07', 'P41', 'P46'],
+  'P11': ['P02', 'P05', 'P24', 'P27', 'P43', 'P48', 'P49'],
+  'P43': ['P11', 'P24', 'P18', 'P06', 'P49', 'P50'],
+  'P24': ['P02', 'P11', 'P18', 'P40', 'P43', 'P06', 'P50'],
+  'P18': ['P01', 'P03', 'P06', 'P24', 'P40', 'P43', 'P44'],
+  'P44': ['P18', 'P03', 'P40', 'P45', 'P10', 'P51'],
+  'P45': ['P23', 'P17', 'P03', 'P44', 'P41', 'P07'],
+  'P46': ['P07', 'P41', 'P42', 'P10', 'P47', 'P53'],
+  'P47': ['P46', 'P53'], // สือเต๋ออยู่ขวาสุดติดกวางหลิงและจุดยุทธศาสตร์ริมทะเล
+
+  // --- ภาคกลางตอนล่าง / เสฉวนเหนือ / ท่าเรือเกงจิ๋วเหนือ-โซ่วชุน ---
+  'P48': ['P11', 'P49', 'P05'],
+  'P49': ['P11', 'P43', 'P48', 'P27', 'P56'],
+  'P06': ['P01', 'P03', 'P18', 'P19', 'P43', 'P24', 'P50', 'P52'],
+  'P50': ['P06', 'P24', 'P43'], // ฟานเฉิงค่ายแฝดเซียงหยาง
+  'P10': ['P03', 'P04', 'P07', 'P22', 'P44', 'P46', 'P51', 'P53'],
+  'P51': ['P44', 'P10', 'P52', 'P22', 'P61'],
+  'P05': ['P11', 'P27', 'P48', 'P55', 'P58'],
+  'P27': ['P05', 'P11', 'P49', 'P56', 'P55', 'P59'],
+  'P52': ['P06', 'P51', 'P19', 'P22', 'P60', 'P61'],
+  'P53': ['P10', 'P46', 'P47', 'P04', 'P62'],
+  'P04': ['P10', 'P21', 'P22', 'P53', 'P54', 'P62'],
+  'P54': ['P04', 'P21', 'P57', 'P62'],
+
+  // --- เสฉวนใต้ / เกงจิ๋วใต้ / น่ำมัน / เจียวจิ๋ว ---
+  'P55': ['P05', 'P27', 'P56', 'P58', 'P59', 'P63'],
+  'P56': ['P49', 'P27', 'P55', 'P19'], // ด่านหย่งอัน ปากทางข้ามจากเสฉวนไปเกงจิ๋ว
+  'P19': ['P06', 'P20', 'P22', 'P56', 'P52', 'P60'],
+  'P22': ['P04', 'P19', 'P20', 'P10', 'P51', 'P52', 'P61'],
+  'P21': ['P04', 'P54', 'P57'],
+  'P57': ['P21', 'P54', 'P62', 'P71'],
+  'P58': ['P05', 'P55', 'P59', 'P63', 'P65_2'],
+  'P59': ['P27', 'P55', 'P58', 'P63', 'P60', 'P64'],
+  'P60': ['P19', 'P52', 'P59', 'P20', 'P64'],
+  'P20': ['P19', 'P22', 'P60', 'P61', 'P64', 'P65', 'P67'],
+  'P61': ['P51', 'P52', 'P22', 'P20', 'P62', 'P66'],
+  'P62': ['P53', 'P04', 'P54', 'P57', 'P61', 'P66'],
+  'P63': ['P55', 'P58', 'P59', 'P65_2', 'P68'],
+  'P64': ['P59', 'P60', 'P20', 'P65', 'P69'],
+  'P65': ['P20', 'P64', 'P66', 'P67', 'P69', 'P70'],
+  'P66': ['P61', 'P62', 'P65', 'P67', 'P70', 'P71'],
+  'P67': ['P20', 'P65', 'P66', 'P70'],
+  'P65_2': ['P58', 'P63', 'P68'], // หย่งชางป่าลึกแดนใต้
+  'P68': ['P63', 'P65_2', 'P69', 'P72'],
+  'P69': ['P64', 'P65', 'P68', 'P70', 'P72'],
+  'P70': ['P65', 'P66', 'P67', 'P69', 'P71'],
+  'P71': ['P57', 'P66', 'P70'],
+  'P72': ['P68', 'P69', 'P73'],
+  'P73': ['P72'] // ปลายใต้สุดของแผนที่ (ยื่อหนานใต้)
+};
+// ⛰️🌊 ข้อมูลภูมิประเทศ (ภูเขา และ แม่น้ำ) สำหรับประดับและเป็นชัยภูมิบนแผนที่
+const TERRAINS = {
+  // --- ระบบแม่น้ำฮวงโห (ภาคเหนือ/ภาคกลาง) ---
+  'T01': { name: '🩵 ฮวงโห', type: 'river', r: 2, c: 2 },
+  'T02': { name: '🩵 ฮวงโห', type: 'river', r: 3, c: 3 },
+  'T03': { name: '🩵 ฮวงโห', type: 'river', r: 2, c: 8 },
+  'T04': { name: '🩵 ฮวงโห', type: 'river', r: 4, c: 3 },
+  'T05': { name: '🩵 ฮวงโห', type: 'river', r: 4, c: 5 },
+
+  // --- ระบบแม่น้ำแยงซีเกียง (เกงจิ๋ว/กังตั๋ง) ---
+  'T06': { name: '💙 แยงซี', type: 'river', r: 8, c: 3 },
+  'T07': { name: '💙 แยงซี', type: 'river', r: 8, c: 4 },
+  'T08': { name: '💙 แยงซี', type: 'river', r: 8, c: 6 },
+  'T09': { name: '💙 แยงซี', type: 'river', r: 8, c: 9 },
+  'T10': { name: '💙 แยงซี', type: 'river', r: 7, c: 10 },
+
+  // --- แนวเทือกเขาและด่านสำคัญ (กิสาน/ทีกระเหม่า/ไท่หาง) ---
+  'T11': { name: '⛰️ กิสาน', type: 'mountain', r: 3, c: 1 },
+  'T12': { name: '⛰️ ไท่หาง', type: 'mountain', r: 1, c: 2 },
+  'T13': { name: '⛰️ ไท่หาง', type: 'mountain', r: 2, c: 11 }, // บล็อกขวาสุดริมทะเล
+  'T14': { name: '⛰️ จงหนาน', type: 'mountain', r: 5, c: 1 },
+  'T15': { name: '⛰️ อู๋ซาน', type: 'mountain', r: 8, c: 11 }
+};
+
+let GENERALS = [
+  { key: 'g01', name: '夏侯惇 แฮหัวตุ้น', shortName: 'แฮหัวตุ้น', type: 'warrior', startProv: 'P03', ownerFaction: 'cao_cao' },
+  { key: 'g02', name: '荀彧 ซุนฮก', shortName: 'ซุนฮก', type: 'strategist', startProv: 'P03', ownerFaction: 'cao_cao' },
+  { key: 'g03', name: '關羽 กวนอู', shortName: 'กวนอู', type: 'warrior', startProv: 'P05', ownerFaction: 'liu_bei' },
+  { key: 'g04', name: '張飛 เตียวหุย', shortName: 'เตียวหุย', type: 'warrior', startProv: 'P05', ownerFaction: 'liu_bei' },
+  { key: 'g05', name: '程普 เทียเภา', shortName: 'เทียเภา', type: 'warrior', startProv: 'P04', ownerFaction: 'sun_jian' },
+  { key: 'g06', name: '顏良 งันเหลียง', shortName: 'งันเหลียง', type: 'warrior', startProv: 'P08', ownerFaction: 'yuan_shao' },
+  { key: 'g07', name: '文醜 บุนทิว', shortName: 'บุนทิว', type: 'warrior', startProv: 'P08', ownerFaction: 'yuan_shao' },
+  { key: 'g08', name: '呂布 ลิโป้', shortName: 'ลิโป้', type: 'warrior', startProv: 'P02', ownerFaction: 'dong_zhuo' }
+];
+
+let G = {
+  year: 190, playerWealth: 120,
+  playerWarlordId: 'cao_cao', playerName: 'โจโฉ', factionName: 'กองทัพเตียจิ๋ว', customColor: '#2b4c7e',
+  activeProvinceKey: null, owner: {}, troops: {}, wealth: {}, managedThisTurn: {},
+  attackSource: null, transferSource: null, generalTransferSource: null,
+  currentCapturedGeneral: null, currentCapturedProvinceKey: null
+};
+
+window.onload = function() {
+  if (localStorage.getItem('TG_WarlordID')) {
+    G.playerWarlordId = localStorage.getItem('TG_WarlordID');
+    G.playerName = localStorage.getItem('TG_PlayerName');
+    G.factionName = localStorage.getItem('TG_FactionName');
+    G.customColor = localStorage.getItem('TG_FactionColor');
+  }
+  
+  document.documentElement.style.setProperty('--player-border', G.customColor);
+  document.documentElement.style.setProperty('--player-bg', G.customColor + '35');
+  document.getElementById('uiPlayerName').innerText = G.playerName;
+  document.getElementById('uiFactionName').innerText = G.factionName;
+
+  if (localStorage.getItem('TG_SAVE_EXISTS') === 'true') {
+    loadGameState();
+  } else {
+    setupBoard190();
+    saveGameState();
+  }
+
+  buildGridMap();
+  refreshUI();
+  
+  if(localStorage.getItem('TG_LAST_ACTIVE_PROV')) {
+     onTileClick(localStorage.getItem('TG_LAST_ACTIVE_PROV'));
+  }
+};
+
+function saveGameState() {
+  localStorage.setItem('TG_SAVE_EXISTS', 'true');
+  localStorage.setItem('TG_year', G.year);
+  localStorage.setItem('TG_playerWealth', G.playerWealth);
+  localStorage.setItem('TG_owner', JSON.stringify(G.owner));
+  localStorage.setItem('TG_troops', JSON.stringify(G.troops));
+  localStorage.setItem('TG_wealth', JSON.stringify(G.wealth));
+  localStorage.setItem('TG_GENERALS', JSON.stringify(GENERALS));
+  localStorage.setItem('TG_log', document.getElementById('logContainer').innerHTML);
+}
+
+function loadGameState() {
+  G.year = parseInt(localStorage.getItem('TG_year')) || 190;
+  G.playerWealth = parseInt(localStorage.getItem('TG_playerWealth')) || 120;
+  G.owner = JSON.parse(localStorage.getItem('TG_owner'));
+  G.troops = JSON.parse(localStorage.getItem('TG_troops'));
+  G.wealth = JSON.parse(localStorage.getItem('TG_wealth'));
+  GENERALS = JSON.parse(localStorage.getItem('TG_GENERALS'));
+  document.getElementById('logContainer').innerHTML = localStorage.getItem('TG_log') || '';
+}
+
+function setupBoard190() {
+  const playerWarlordId = localStorage.getItem('TG_WarlordID') || 'cao_cao';
+  const customSpawnProv = localStorage.getItem('TG_SpawnProvince') || 'P11';
+
+  Object.keys(PROVINCES).forEach(k => {
+    G.owner[k] = null;
+    G.troops[k] = PROVINCES[k].baseTroops; 
+    G.wealth[k] = PROVINCES[k].baseWealth;
+    G.managedThisTurn[k] = false;
+
+    if (k === 'P03') G.owner[k] = 'cao_cao';   
+    if (k === 'P05') G.owner[k] = 'liu_bei';   
+    if (k === 'P04') G.owner[k] = 'sun_jian';  
+    if (k === 'P08') G.owner[k] = 'yuan_shao'; 
+    if (k === 'P02') G.owner[k] = 'dong_zhuo'; 
+    
+    if (k === 'P23') G.owner[k] = 'cao_cao';   
+    if (k === 'P25') G.owner[k] = 'gongsun';   
+    if (k === 'P13') G.owner[k] = 'ma_teng';   
+    
+    if (playerWarlordId === 'custom' && k === customSpawnProv) {
+       G.owner[k] = 'player'; 
+       G.troops[k] = 50;      
+       G.wealth[k] = 60;
+    }
+    
+    if (playerWarlordId !== 'custom' && G.owner[k] === playerWarlordId) {
+       G.owner[k] = 'player';
+    }
+  });
+
+  addLog("⚔️ ศักราช 190: แผนที่ยุทธศาสตร์ถูกจัดระเบียบตามรูปทรงภูมิศาสตร์จีนเรียบร้อย!", 'system');
+}
+
+// 🧱 เรนเดอร์แผนที่ลงพิกัดเจาะจง ไม่ให้ช่องสลับขนาดดันกันจนเบี้ยว
+function buildGridMap() {
+  const mapGrid = document.getElementById('gridMap'); 
+  mapGrid.innerHTML = '';
+  
+  // 🔄 เปลี่ยนเป็นลูปขนาด 13 แถว และ 11 คอลัมน์ เพื่อรองรับแผนที่ 73 เมืองและภูมิประเทศแบบใหม่
+  for (let r = 1; r <= 13; r++) {
+    for (let c = 1; c <= 11; c++) {
+      
+      // 1. ค้นหาว่า ณ พิกัดนี้มี "เมือง" อยู่จริงไหม
+      const foundKey = Object.keys(PROVINCES).find(k => PROVINCES[k].r === r && PROVINCES[k].c === c);
+      
+      if (foundKey) {
+        const p = PROVINCES[foundKey];
+        const tile = document.createElement('div');
+        
+        let sizeClass = 'size-small';
+        if(p.size === 'large') sizeClass = 'size-large';
+        if(p.size === 'medium') sizeClass = 'size-medium';
+        
+        tile.className = `tile province ${sizeClass}`;
+        tile.id = `tile-${foundKey}`;
+        tile.style.gridRowStart = p.r;
+        tile.style.gridColumnStart = p.c;
+        
+        const names = p.name.split(' ');
+        tile.innerHTML = `
+          <div class="tile-name-zh">${names[0]}</div>
+          <div class="tile-name-th">${names[1]}</div>
+          <div class="tile-troops" id="troops-${foundKey}">0</div>
+          <div class="tile-general" id="gen-${foundKey}"></div>
+        `;
+        tile.onclick = () => onTileClick(foundKey);
+        mapGrid.appendChild(tile);
+
+      } else {
+        // 2. ถ้าไม่มีเมือง ให้มาเช็คต่อว่าพิกัดนี้มี "แม่น้ำหรือภูเขา" อยู่จริงไหม
+        const foundTerrainKey = Object.keys(TERRAINS).find(k => TERRAINS[k].r === r && TERRAINS[k].c === c);
+        
+        if (foundTerrainKey) {
+          const terr = TERRAINS[foundTerrainKey];
+          const terrainTile = document.createElement('div');
+          
+          // ใส่คลาสตกแต่งและประเภทภูมิประเทศ (river หรือ mountain)
+          terrainTile.className = `tile tile-terrain ${terr.type}`;
+          terrainTile.style.gridRowStart = r;
+          terrainTile.style.gridColumnStart = c;
+          
+          terrainTile.innerHTML = `<span>${terr.name}</span>`;
+          mapGrid.appendChild(terrainTile);
+          
+        } else {
+          // 3. หากเป็นพิกัดช่องว่างจริงๆ ไม่มีทั้งเมืองและภูมิประเทศ ให้เป็นกล่องพื้นหลังจางๆ เพื่อรักษารูปทรงแผนที่ไว้
+          const emptyTile = document.createElement('div');
+          emptyTile.className = 'tile';
+          emptyTile.style.gridRowStart = r;
+          emptyTile.style.gridColumnStart = c;
+          mapGrid.appendChild(emptyTile);
+        }
+      }
+    }
+  }
+} // เครื่องหมายปีกกาปิดท้ายฟังก์ชันเดิมของพี่
+
+function onTileClick(key) {
+  if (G.transferSource) {
+    if (key === G.transferSource) { cancelTransfer(); return; }
+    if ((ADJACENCY[G.transferSource]||[]).includes(key) && G.owner[key] === 'player') { doMoveTroops(G.transferSource, key); }
+    else { alert("โอนทหารไปเมืองเราที่ติดกันเท่านั้น!"); cancelTransfer(); }
+    return;
+  }
+  if (G.attackSource) {
+    if (key === G.attackSource) { cancelAttack(); return; }
+    if ((ADJACENCY[G.attackSource]||[]).includes(key) && G.owner[key] !== 'player') { doBattle(G.attackSource, key); }
+    else { alert("สั่งโจมตีเมืองข้าศึกที่ติดกันเท่านั้น!"); cancelAttack(); }
+    return;
+  }
+  if (G.generalTransferSource) {
+    if (key === G.generalTransferSource) { cancelGeneralTransfer(); return; }
+    if ((ADJACENCY[G.generalTransferSource]||[]).includes(key) && G.owner[key] === 'player') { doMoveGeneral(G.generalTransferSource, key); }
+    else { alert("ย้ายขุนพลไปเมืองเราที่ติดกันเท่านั้น!"); cancelGeneralTransfer(); }
+    return;
+  }
+
+  G.activeProvinceKey = key;
+  localStorage.setItem('TG_LAST_ACTIVE_PROV', key);
+  document.querySelectorAll('.tile.province').forEach(t => t.classList.remove('active'));
+  const targetTile = document.getElementById(`tile-${key}`);
+  if(targetTile) targetTile.classList.add('active');
+  showProvinceInfo(key);
+}
+
+function showProvinceInfo(key) {
+  const p = PROVINCES[key]; if (!p) return;
+  const owner = G.owner[key]; const troops = G.troops[key]; const wealth = G.wealth[key];
+  const hasGeneral = getGeneralInProvince(key);
+  const isPlayer = (owner === 'player'); const alreadyManaged = G.managedThisTurn[key];
+
+  let ownerName = 'หัวเมืองอิสระ';
+  if(owner==='cao_cao') ownerName = 'กองทัพโจโฉ'; if(owner==='liu_bei') ownerName = 'กองทัพเล่าปี่';
+  if(owner==='sun_jian') ownerName = 'กองทัพซุนเกี๋ยน'; if(owner==='yuan_shao') ownerName = 'กองทัพอ้วนเสี้ยว';
+  if(owner==='dong_zhuo') ownerName = 'ทรชนตั๋งโต๊ะ'; if(owner==='gongsun') ownerName = 'ตระกูลกงซุนแห่งเหลียวตง';
+  if(owner==='ma_teng') ownerName = 'กองทัพม้าเท้งแคว้นซีเหลียง'; if(owner==='player') ownerName = G.factionName + " (คุณ)";
+
+  const adj = ADJACENCY[key] || [];
+  const canTransfer = isPlayer && troops > 20 && adj.some(k=>G.owner[k]==='player');
+  const canAttack = isPlayer && troops > 15 && adj.some(k=>G.owner[k]!=='player');
+  const canMoveGeneral = isPlayer && hasGeneral && adj.some(k=>G.owner[k]==='player');
+  const names = p.name.split(' ');
+
+  let html = `
+    <div style="font-size:1.05rem; font-weight:bold; text-align:center; border-bottom:1px double var(--saddle); padding-bottom:4px; margin-bottom:8px;">${names[0]} ${names[1]} (${p.size === 'large' ? 'นครหลวงใหญ่' : p.size === 'medium' ? 'เมืองมณฑล' : 'เมืองยุทธศาสตร์ย่อย'})</div>
+    <div class="info-row"><span>🚩 ขุนศึกที่ครอง:</span><span>${ownerName}</span></div>
+    <div class="info-row"><span>⚔️ กองกำลังพล:</span><span>${troops.toLocaleString()} นาย</span></div>
+    <div class="info-row"><span>🪙 ความมั่งคั่ง:</span><span>${wealth} ระดับ</span></div>
+    <div class="info-row"><span>👤 แม่ทัพเฝ้าเมือง:</span><span>${hasGeneral ? hasGeneral.name : 'ไม่มี'}</span></div>
+  `;
+
+  if (isPlayer) {
+    html += `
+      <div style="font-size:0.8rem; font-weight:bold; color:var(--saddle); margin:10px 0 4px 0;">⚙️ บัญชาการศึก</div>
+      <button class="btn-action" onclick="doRecruit('${key}')" ${alreadyManaged || G.playerWealth < 20 ? 'disabled' : ''}>⚔️ เกณฑ์ไพร่พลหนุน <small>ค่าใช้จ่าย 20 💰 (+15 นาย)</small></button>
+      <button class="btn-action" onclick="doDevelop('${key}')" ${alreadyManaged || G.playerWealth < 25 ? 'disabled' : ''}>🌾 พัฒนาท้องถิ่นคลัง <small>ค่าใช้จ่าย 25 💰 (+10 มั่งคั่ง)</small></button>
+      <button class="btn-action" onclick="startAttack('${key}')" ${canAttack ? '' : 'disabled'}>🦅 เคลื่อนทัพตีตราเสือ <small>ยกกำลังบุกเมืองติดกัน</small></button>
+      <button class="btn-action" onclick="startTransfer('${key}')" ${canTransfer ? '' : 'disabled'}>🔄 เคลื่อนกำลังหนุน <small>ย้าย 20 นายไปเมืองเรา</small></button>
+      <button class="btn-action" style="border-color:#c8952a;" onclick="startGeneralTransfer('${key}')" ${canMoveGeneral ? '' : 'disabled'}>👑 ย้ายขุนพลยุทธศาสตร์ <small>${hasGeneral ? hasGeneral.shortName : ''}</small></button>
+      <button id="btn-city-manage" class="btn-action" style="border-color: #8B4513; background-color: rgba(139, 69, 19, 0.15);" onclick="window.location.href='three-kingdoms-city.html?province=${key}'">🏛️ มุมมองบริหารเมือง</button>
+    `;
+  }
+  document.getElementById('panelDetail').innerHTML = html;
+}
+
+function doRecruit(key) { G.playerWealth -= 20; G.troops[key] += 15; G.managedThisTurn[key] = true; addLog(`⚔️ เกณฑ์พลเมือง ${splitName(key)} +15 นาย`, 'player'); saveGameState(); refreshUI(); showProvinceInfo(key); }
+function doDevelop(key) { G.playerWealth -= 25; G.wealth[key] += 10; G.managedThisTurn[key] = true; addLog(`🪙 บริหารความมั่งคั่งเมือง ${splitName(key)} +10`, 'player'); saveGameState(); refreshUI(); showProvinceInfo(key); }
+
+function startAttack(key) { G.attackSource = key; (ADJACENCY[key]||[]).forEach(k => { if(G.owner[k]!=='player') { const t = document.getElementById(`tile-${k}`); if(t) t.classList.add('attack-target'); } }); }
+function cancelAttack() { if(G.attackSource) { (ADJACENCY[G.attackSource]||[]).forEach(k => { const t = document.getElementById(`tile-${k}`); if(t) t.classList.remove('attack-target'); }); } G.attackSource = null; }
+
+function doBattle(fromKey, toKey) {
+  const attackers = G.troops[fromKey] - 5; const defenders = G.troops[toKey];
+  let attRoll = attackers * (0.6 + Math.random()*0.6); let defRoll = defenders * (0.7 + Math.random()*0.6);
+  
+  const attGen = getGeneralInProvince(fromKey); if (attGen && attGen.type==='warrior') attRoll *= 1.25;
+  const defGen = getGeneralInProvince(toKey); if (defGen && defGen.type==='warrior') defRoll *= 1.25;
+
+  cancelAttack();
+
+  if (attRoll > defRoll) {
+    G.troops[fromKey] = 5; G.troops[toKey] = Math.max(5, Math.floor(attackers - defenders*0.3));
+    G.owner[toKey] = 'player';
+    addLog(`🔥 ยึดป้อมค่ายเมือง ${splitName(toKey)} ได้สำเร็จแล้ว!`, 'player');
+    saveGameState();
+
+    if (defGen) {
+      triggerCaptureEvent(defGen, toKey);
+    }
+  } else {
+    G.troops[fromKey] = Math.max(5, G.troops[fromKey] - Math.floor(attackers*0.5));
+    addLog(`❌ บุกตีเมือง ${splitName(toKey)} ล้มเหลว กองทัพถอยร่นดิ่งกลับป้อม`, 'system');
+    saveGameState();
+  }
+  refreshUI();
+  showProvinceInfo(toKey);
+}
+
+function triggerCaptureEvent(gen, provinceKey) {
+  G.currentCapturedGeneral = gen;
+  G.currentCapturedProvinceKey = provinceKey;
+  const modal = document.getElementById('captureModal');
+  const body = document.getElementById('captureBody');
+  body.innerHTML = `กองทัพของท่านสามารถจับกุมตัวขุนศึก <b>[${gen.name}]</b> ได้ในสนามรบแคว้น ${splitName(provinceKey)}!<br><br>บัดนี้ ชะตากรรมของเขาอยู่ในกำมือท่านแล้ว จะสั่งเกลี้ยกล่อมรับไอ้เสือเข้าพวก หรือลากตัวไปลานประหารทิ้งเพื่อตัดเสี้ยนหนาม?`;
+  modal.classList.add('show');
+}
+
+function resolveCapture(action) {
+  const gen = G.currentCapturedGeneral;
+  const modal = document.getElementById('captureModal');
+  if (!gen) return;
+
+  if (action === 'recruit') {
+    if (Math.random() < 0.7) {
+      gen.ownerFaction = 'player';
+      addLog(`🤝 สำเร็จ! ขุนพล [${gen.shortName}] ซาบซึ้งในพระคุณยอมคุกเข่าสวามิภักดิ์ต่อท่านแล้ว`, 'player');
+    } else {
+      gen.ownerFaction = 'neutral';
+      addLog(`🏃 ขุนพล [${gen.shortName}] ปฏิเสธการสวามิภักดิ์ถุยน้ำลายใส่ และอาศัยช่วงชุลมุนหลบหนีไปได้!`, 'system');
+    }
+  } else if (action === 'execute') {
+    GENERALS = GENERALS.filter(g => g.key !== gen.key);
+    addLog(`🪓 ชับ! ท่านสั่งให้นำตัว [${gen.shortName}] ไปตัดหัวประหารชีวิตที่หน้าประตูป้อมค่าย!`, 'system');
+  }
+
+  G.currentCapturedGeneral = null;
+  G.currentCapturedProvinceKey = null;
+  modal.classList.remove('show');
+  
+  saveGameState();
+  refreshUI();
+  if (G.activeProvinceKey) showProvinceInfo(G.activeProvinceKey);
+}
+
+function startTransfer(key) { G.transferSource = key; (ADJACENCY[key]||[]).forEach(k => { if(G.owner[k]==='player') { const t = document.getElementById(`tile-${k}`); if(t) t.classList.add('transfer-target'); } }); }
+function cancelTransfer() { if(G.transferSource) { (ADJACENCY[G.transferSource]||[]).forEach(k => { const t = document.getElementById(`tile-${k}`); if(t) t.classList.remove('transfer-target'); }); } G.transferSource = null; }
+function doMoveTroops(fromKey, toKey) { G.troops[fromKey] -= 20; G.troops[toKey] += 20; cancelTransfer(); addLog(`🔄 ย้ายทหารหนุน ${splitName(fromKey)} → ${splitName(toKey)} [20 นาย]`, 'player'); saveGameState(); refreshUI(); showProvinceInfo(toKey); }
+
+function startGeneralTransfer(key) { G.generalTransferSource = key; (ADJACENCY[key]||[]).forEach(k => { if(G.owner[k]==='player') { const t = document.getElementById(`tile-${k}`); if(t) t.classList.add('general-transfer-target'); } }); }
+function cancelGeneralTransfer() { if(G.generalTransferSource) { (ADJACENCY[G.generalTransferSource]||[]).forEach(k => { const t = document.getElementById(`tile-${k}`); if(t) t.classList.remove('general-transfer-target'); }); } G.generalTransferSource = null; }
+function doMoveGeneral(fromKey, toKey) { const gen = getGeneralInProvince(fromKey); if(!gen){ cancelGeneralTransfer(); return; } gen.startProv = toKey; cancelGeneralTransfer(); addLog(`👑 ย้ายแม่ทัพ ${gen.shortName} ไปประจำการเมือง ${splitName(toKey)}`, 'player'); saveGameState(); refreshUI(); showProvinceInfo(toKey); }
+
+function endTurn() {
+  let income = 0; Object.keys(PROVINCES).forEach(k => {
+    G.managedThisTurn[k] = false;
+    if (G.owner[k] === 'player') {
+      let inc = Math.floor(G.wealth[k] * 0.4);
+      const g = getGeneralInProvince(k); if(g && g.type==='strategist') inc += 10;
+      income += inc;
+    } else if (G.owner[k] !== 'neutral' && G.owner[k] !== null) {
+      G.troops[k] += Math.floor(Math.random()*5) + 4;
+    }
+  });
+  G.playerWealth += income; G.year += 1;
+  addLog(`🍂 เปลี่ยนผันฤดูกาล ขึ้นปี ค.ศ. ${G.year} (รับส่วยภาษีเมืองกำนัล +${income} 💰)`, 'system');
+  saveGameState();
+  refreshUI();
+  if (G.activeProvinceKey) showProvinceInfo(G.activeProvinceKey);
+}
+
+function refreshUI() {
+  document.getElementById('uiYear').innerText = G.year;
+  document.getElementById('uiWealth').innerText = G.playerWealth.toLocaleString() + " 💰";
+
+  Object.keys(PROVINCES).forEach(k => {
+    const tile = document.getElementById(`tile-${k}`);
+    if (tile) {
+      const ow = G.owner[k];
+      if (ow === 'player') { tile.style.backgroundColor = G.customColor + '25'; tile.style.borderColor = G.customColor; }
+      else if (ow === 'cao_cao') { tile.style.backgroundColor = 'rgba(43,76,126,0.2)'; tile.style.borderColor = 'var(--color-cao)'; }
+      else if (ow === 'liu_bei') { tile.style.backgroundColor = 'rgba(46,90,54,0.2)'; tile.style.borderColor = 'var(--color-liu)'; }
+      else if (ow === 'sun_jian') { tile.style.backgroundColor = 'rgba(163,67,67,0.2)'; tile.style.borderColor = 'var(--color-sun)'; }
+      else if (ow === 'yuan_shao') { tile.style.backgroundColor = 'rgba(189,160,56,0.2)'; tile.style.borderColor = 'var(--color-yuan)'; }
+      else if (ow === 'dong_zhuo') { tile.style.backgroundColor = 'rgba(139,0,0,0.15)'; tile.style.borderColor = 'black'; }
+      else if (ow === 'gongsun') { tile.style.backgroundColor = 'rgba(155,89,182,0.15)'; tile.style.borderColor = '#8e44ad'; }
+      else if (ow === 'ma_teng') { tile.style.backgroundColor = 'rgba(230,126,34,0.15)'; tile.style.borderColor = '#d35400'; }
+      else { tile.style.backgroundColor = 'var(--parchment)'; tile.style.borderColor = 'var(--saddle)'; }
+
+      const troopEl = document.getElementById(`troops-${k}`);
+      if(troopEl) troopEl.innerText = G.troops[k] ? G.troops[k].toLocaleString() : '0';
+      const genEl = document.getElementById(`gen-${k}`);
+      if(genEl) {
+        const g = getGeneralInProvince(k);
+        genEl.innerText = g ? `👤 ${g.shortName}` : '';
+      }
+    }
+  });
+}
+
+function getGeneralInProvince(provKey) {
+  return GENERALS.find(gen => gen.startProv === provKey && (gen.ownerFaction === 'player' || gen.ownerFaction === G.owner[provKey]));
+}
+function splitName(key) { return PROVINCES[key] ? PROVINCES[key].name.split(' ')[1] : ''; }
+function addLog(text, type) {
+  const c = document.getElementById('logContainer'); let col = '#3A2010';
+  if (type==='player') col='#005500'; if (type==='system') col='#8b0000';
+  c.innerHTML += `<div class="log-entry" style="color:${col}">${text}</div>`; c.scrollTop = c.scrollHeight;
+}
+</script>
+</body>
+</html>

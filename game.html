@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三國 · 群雄逐鹿 — แผนที่ยุทธศาสตร์</title>
+<link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+<div class="app">
+  <!-- ============ TOP BAR ============ -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="crest" id="crest">主</div>
+      <div><div class="fz" id="brandFaction">ก๊กของท่าน</div><div class="fl">主公 <span id="brandPlayer">—</span></div></div>
+    </div>
+    <div class="tb-stats">
+      <div class="tb-stat"><div class="l">ค.ศ.</div><div class="v" id="uiYear">190</div></div>
+      <div class="tb-stat tb-season"><div class="l">ฤดูกาล</div><div class="v" id="uiSeason">🌸 ฤดูใบไม้ผลิ</div></div>
+      <div class="tb-stat"><div class="l">เทิร์น</div><div class="v" id="uiTurn">1</div></div>
+      <div class="tb-stat tb-gold" id="goldStat" onclick="this.classList.toggle('tip-open')"><div class="l">🪙 คลังหลวง</div><div class="v" id="uiGold">0</div><div class="gold-tip" id="goldTip"></div></div>
+      <div class="tb-stat"><div class="l">🏯 หัวเมือง</div><div class="v" id="uiProvCount">0</div></div>
+    </div>
+    <div class="tb-tools">
+      <button class="btn" onclick="UI.openGenerals()">👑 ขุนพล</button>
+      <button class="btn" onclick="UI.openGoal()">🎯 เป้าหมาย<span class="reform-pip" id="goalPip" style="display:none"></span></button>
+      <button class="btn" onclick="UI.openGovern()">🏛️ บริหารก๊ก</button>
+      <button class="btn" id="btnCourt" onclick="UI.openCourt()">🐉 ราชสำนัก<span class="reform-pip" id="courtPip" style="display:none"></span></button>
+      <button class="btn" onclick="UI.openTreasures()">🏵️ ของวิเศษ</button>
+      <button class="btn" onclick="UI.openDiplomacy()">📜 การทูต</button>
+      <button class="btn" onclick="UI.openEspionage()">🕵️ สายลับ</button>
+      <button class="btn" onclick="UI.openMarriage()">💞 สมรส</button>
+      <button class="btn" onclick="UI.openClan()">🌳 ตระกูล</button>
+      <button class="btn" id="btnReform" onclick="UI.openReform()">🌸 ปฏิรูป<span class="reform-pip" id="reformPip"></span></button>
+    </div>
+  </div>
+
+  <!-- ============ BODY ============ -->
+  <div class="body">
+    <div class="map-area">
+      <div class="board grain">
+        <div class="map-viewport" id="mapViewport">
+          <div class="map-stage" id="mapStage"></div>
+        </div>
+        <div class="map-zoom-hint">🖱️ ลากเพื่อเลื่อน · ล้อเมาส์เพื่อซูม</div>
+        <div class="lang-toggle">
+          <button data-lang="th" onclick="UI.setLang('th')">TH</button>
+          <button data-lang="en" onclick="UI.setLang('en')">EN</button>
+          <button data-lang="ch" onclick="UI.setLang('ch')">中</button>
+        </div>
+        <div class="layer-toggle">
+          <button data-layer="regions" onclick="UI.toggleLayer('regions')" title="ชื่อมณฑล (州)">🗺️ มณฑล</button>
+          <button data-layer="cities" onclick="UI.toggleLayer('cities')" title="ชื่อเมือง">🏯 เมือง</button>
+          <button data-layer="troops" onclick="UI.toggleLayer('troops')" title="กำลังพล">⚔️ กำลังพล</button>
+        </div>
+        <div class="map-zoom-ctrl">
+          <button onclick="MapView.zoomBy(1.3)" title="ซูมเข้า">+</button>
+          <button onclick="MapView.zoomBy(0.77)" title="ซูมออก">−</button>
+          <button onclick="MapView.reset()" title="รีเซ็ต" style="font-size:.9rem">⤢</button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="side">
+      <div class="side-sec">
+        <div class="side-title">📍 ดินแดนยุทธศาสตร์</div>
+        <div id="pvDetail"><div class="muted" style="text-align:center;padding:14px 0;font-size:.85rem">คลิกเลือกมณฑลบนแผนที่เพื่อเริ่มบัญชาการ</div></div>
+      </div>
+      <div class="side-sec grow">
+        <div class="side-title">📜 พงศาวดารศึก</div>
+        <div id="logBox"></div>
+      </div>
+      <div class="endturn-wrap"><button class="btn btn-primary" id="btnEndTurn" onclick="endTurn()">⛺ สิ้นสุดเทิร์น</button></div>
+    </aside>
+  </div>
+</div>
+
+<!-- ============ MAIN MODAL ============ -->
+<div class="overlay" id="mainModal">
+  <div class="card grain">
+    <div class="modal-head">
+      <div><div class="modal-title" id="modalTitle"></div><div class="modal-sub" id="modalSub"></div></div>
+      <button class="modal-x" onclick="UI.closeModal()">✕</button>
+    </div>
+    <div id="modalBody"></div>
+    <div id="modalFoot"></div>
+  </div>
+</div>
+
+<!-- ============ BATTLE OVERLAY ============ -->
+<div id="battleOverlay"><div class="bt-wrap" id="battleBody"></div></div>
+<div id="duelStage"></div>
+
+<script src="js/data.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-delaunay@6.0.4/dist/d3-delaunay.min.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/diplomacy.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/battle.js"></script>
+<script src="js/ui.js"></script>
+<script>
+(function boot(){
+  if(!loadGame()){
+    const raw=localStorage.getItem('TG3_SETUP');
+    const setup = raw?JSON.parse(raw):{ warlord:'cao_cao', playerName:'โจโฉ', factionName:'ก๊กโจโฉ', color:'#3060a8' };
+    newGame(setup);
+  }
+  // brand
+  document.getElementById('brandFaction').textContent=G.factionName;
+  document.getElementById('brandPlayer').textContent=G.playerName;
+  const crest=document.getElementById('crest');
+  crest.style.background=G.playerColor; crest.textContent=(FACTIONS[G.baseWarlord]&&G.baseWarlord!=='custom')?FACTIONS[G.baseWarlord].zh:'主';
+  document.documentElement.style.setProperty('--player-color',G.playerColor);
+  UI.init();
+  // แสดงสถานการณ์เริ่มต้น + เป้าหมายประจำก๊ก ครั้งแรกที่เปิดเกม
+  if(G.flags && !G.flags.introShown){ G.flags.introShown=true; saveGame(); setTimeout(()=>UI.showFactionIntro(),400); }
+})();
+</script>
+</body>
+</html>
